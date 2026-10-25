@@ -7,6 +7,7 @@ import { OpportunitiesTabs } from '@/components/app/opportunities/tabs';
 import { OpportunitiesList } from '@/components/app/opportunities/opportunities-list';
 import { CATEGORIES, OPPORTUNITY_STATUSES, type Category, type OpportunityStatus } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
+import { getI18n } from '@/lib/i18n/server';
 
 export const metadata = { title: 'Opportunities' };
 
@@ -16,6 +17,7 @@ export default async function OpportunitiesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser('/app/opportunities');
+  const { t } = await getI18n();
   const params = await searchParams;
   const one = (k: string): string | undefined => (Array.isArray(params[k]) ? params[k][0] : params[k]) as string | undefined;
 
@@ -50,9 +52,9 @@ export default async function OpportunitiesPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Opportunities</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{t('opp.title')}</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Every match ORBIT has found for you, scored and sortable. Select rows for bulk actions.
+          {t('opp.subtitle')}
         </p>
       </div>
       <OpportunitiesTabs counts={counts} activeTab={status}>

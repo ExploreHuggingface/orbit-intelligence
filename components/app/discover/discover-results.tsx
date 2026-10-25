@@ -14,8 +14,9 @@ import { OpportunityDrawer } from '@/components/app/opportunity-drawer';
 import { OpportunitiesTable } from '@/components/app/opportunities-table';
 import { saveSearchAction } from '@/lib/actions/app';
 import { toastSuccess } from '@/components/ui/toast-helpers';
-import { CATEGORY_LABELS, type Category, type Opportunity, type OpportunityFilters, type PriceHistoryPoint } from '@/lib/types';
+import { type Category, type Opportunity, type OpportunityFilters, type PriceHistoryPoint } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const SORTS: Array<{ value: NonNullable<OpportunityFilters['sort']>; label: string }> = [
   { value: 'newest', label: 'Newest' },
@@ -49,6 +50,7 @@ export function DiscoverResults({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [view, setView] = React.useState<'grid' | 'table'>('grid');
+  const { t } = useI18n();
   const [drawerOpp, setDrawerOpp] = React.useState<Opportunity | null>(null);
   const hasFilters = q.length > 0 || category !== 'all' || Array.from(searchParams.keys()).some((k) => !['q', 'category', 'sort', 'page', 'view'].includes(k));
 
@@ -65,7 +67,7 @@ export function DiscoverResults({
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">
         <p className="tnum text-[13px] text-[var(--text-muted)]" aria-live="polite">
-          <span className="font-semibold text-[var(--text-primary)]">{count}</span> {count === 1 ? 'opportunity' : 'opportunities'}
+          <span className="font-semibold text-[var(--text-primary)]">{count}</span> {count === 1 ? t('common.result') : t('discover.opportunities')}
           {q && (
             <>
               {' '}for “<span className="font-medium text-[var(--text-primary)]">{q}</span>”
@@ -76,7 +78,7 @@ export function DiscoverResults({
           <select
             value={sort ?? 'newest'}
             onChange={(e) => setParam('sort', e.target.value === 'newest' ? null : e.target.value)}
-            aria-label="Sort results"
+            aria-label={t('table.sort')}
             className="focus-ring h-9 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px] text-[var(--text-secondary)]"
           >
             {SORTS.map((s) => (
@@ -107,16 +109,16 @@ export function DiscoverResults({
               toastSuccess('Search saved', 'Find it again under Recent searches on the Overview page.');
             }}
             disabled={!q}
-            title={q ? 'Save this search' : 'Enter a search term to save it'}
+            title={q ? t('discover.saveSearchTitle') : t('discover.saveSearchDisabled')}
             className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-40"
           >
-            <BookmarkPlus className="size-3.5" aria-hidden /> Save Search
+            <BookmarkPlus className="size-3.5" aria-hidden /> {t('discover.saveSearch')}
           </button>
           <Link
             href={`/app/monitors?new=1${q ? `&prefill=${encodeURIComponent(q)}` : ''}${category !== 'all' ? `&category=${category}` : ''}`}
             className="focus-ring inline-flex h-9 items-center rounded-lg bg-[var(--accent)] px-3 text-[13px] font-medium text-white hover:opacity-90"
           >
-            Create Monitor
+            {t('nav.newMonitor')}
           </Link>
         </div>
       </div>
@@ -124,8 +126,8 @@ export function DiscoverResults({
       {count === 0 ? (
         <EmptyState
           icon={SearchX}
-          title="No opportunities match your search"
-          description="Try broadening filters — or create a monitor to be notified when matching items appear."
+          title={t('discover.empty')}
+          description={t('discover.emptyHint')}
           action={
             hasFilters ? (
               <button
@@ -133,7 +135,7 @@ export function DiscoverResults({
                 onClick={() => router.push('/app/discover')}
                 className="focus-ring h-9 rounded-lg border border-[var(--border)] px-3.5 text-[13px] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
               >
-                Clear all filters
+                {t('common.clearAll')}
               </button>
             ) : undefined
           }
@@ -147,7 +149,7 @@ export function DiscoverResults({
                   type="button"
                   onClick={() => setDrawerOpp(o)}
                   className="focus-ring block w-full rounded-xl text-left"
-                  aria-label={`View details: ${o.title}`}
+                  aria-label={`${t('common.open')}: ${o.title}`}
                 >
                   {/* 16:9 visual placeholder — category-tinted, no fake product photos */}
                   <div
@@ -158,7 +160,7 @@ export function DiscoverResults({
                     aria-hidden
                   >
                     <span className="text-xs font-semibold uppercase tracking-[0.08em] text-white/85">
-                      {CATEGORY_LABELS[o.category]}
+                      {t(`category.${o.category}` as never)}
                     </span>
                   </div>
                   <CardContent className="space-y-2.5">
@@ -186,7 +188,7 @@ export function DiscoverResults({
                     </div>
                     {o.estimated_market_value != null && (
                       <p className="text-[11px] text-[var(--text-muted)]">
-                        Reference {o.estimated_market_value.toLocaleString('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })} · illustrative estimate
+                        {t('table.reference')} {o.estimated_market_value.toLocaleString('en-IE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })} · {t('label.illustrativeEstimate')}
                       </p>
                     )}
                   </CardContent>

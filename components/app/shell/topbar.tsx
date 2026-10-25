@@ -10,6 +10,8 @@ import { NotificationBell, type Notification } from '@/components/easyui/Notific
 import { markNotificationReadAction, markAllReadAction } from '@/lib/actions/app';
 import { useUiStore } from '@/lib/stores/ui-store';
 import { navItemForPath } from '@/components/app/nav';
+import { LanguageSelector } from '@/components/ui/language-selector';
+import { useI18n } from '@/lib/i18n/context';
 
 export interface BellNotification {
   id: string;
@@ -30,6 +32,8 @@ export function Topbar({
   const pathname = usePathname();
   const setMobileOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const active = navItemForPath(pathname ?? '/app/overview');
+  const { t, locale } = useI18n();
+  const activeLabel = locale === 'en' ? active.label : t(active.key);
 
   const items: Notification[] = notifications.map((n) => ({
     id: n.id,
@@ -59,17 +63,18 @@ export function Topbar({
         </button>
         <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-[13px]">
           <Link href="/app/overview" className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-            Workspace
+            {t('nav.workspace')}
           </Link>
           <span className="text-[var(--text-subtle)]" aria-hidden>
             /
           </span>
-          <span className="truncate font-medium text-[var(--text-primary)]">{active.label}</span>
+          <span className="truncate font-medium text-[var(--text-primary)]">{activeLabel}</span>
         </nav>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
         {pageAction}
+        <LanguageSelector className="hidden sm:block" />
         <div className="relative">
           <NotificationBell
             notifications={items}
@@ -81,7 +86,7 @@ export function Topbar({
                 className="text-xs font-medium text-[color:var(--color-brand)] hover:underline"
                 onClick={() => router.push('/app/notifications')}
               >
-                View all notifications
+                {t('notif.viewAll')}
               </Link>
             }
           />
@@ -91,7 +96,7 @@ export function Topbar({
           className="focus-ring hidden h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 text-sm font-medium text-white hover:opacity-90 sm:inline-flex"
         >
           <Plus className="size-4" strokeWidth={2} aria-hidden />
-          New Monitor
+          {t('nav.newMonitor')}
         </Link>
       </div>
     </header>

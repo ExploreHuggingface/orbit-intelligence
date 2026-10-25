@@ -9,7 +9,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import type BetterSqlite3 from 'better-sqlite3';
-import { seedGlobals, seedUserContent } from './seed';
+import { seedGlobals } from './seed';
 
 export type Db = BetterSqlite3.Database;
 
@@ -222,4 +222,4 @@ export function getDb(): Db {
 }
 
 /** Per-user demo content, created on signup so every page has data on first login. */
-export { seedUserContent as seedForUser } from './seed';
+export { seedUserContent as seedForUser, seedUserContent } from './seed';

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { StatCard } from '@/components/easyui/StatCard';
 import { formatMoney, formatNumber } from '@/lib/utils/format';
 import type { Kpis } from '@/lib/types';
+import { useI18n } from '@/lib/i18n/context';
 
 function weekLabels(): string[] {
   const out: string[] = [];
@@ -17,51 +18,52 @@ function weekLabels(): string[] {
 }
 
 export function KpiRow({ kpis }: { kpis: Kpis }) {
+  const { t } = useI18n();
   const labels = weekLabels();
   const cards = [
     {
       id: 'monitors',
       href: '/app/monitors',
-      label: 'Active Monitors',
+      label: t('overview.kpi.activeMonitors'),
       value: kpis.active_monitors,
       previous: Math.max(0, kpis.active_monitors - kpis.monitors_trend),
       trend: kpis.spark_monitors,
       format: formatNumber,
       color: 'var(--color-brand)',
-      period: 'vs last week',
+      period: t('overview.kpi.vsLastWeek'),
     },
     {
       id: 'opportunities',
       href: '/app/opportunities',
-      label: 'Matching Opportunities',
+      label: t('overview.kpi.matching'),
       value: kpis.matching_opportunities,
       delta: kpis.opportunities_trend,
       trend: kpis.spark_opportunities,
       format: formatNumber,
       color: 'var(--color-info)',
-      period: 'vs last week',
+      period: t('overview.kpi.vsLastWeek'),
     },
     {
       id: 'drops',
       href: '/app/opportunities?sort=biggest_price_drop',
-      label: 'Price Drops Detected',
+      label: t('overview.kpi.priceDrops'),
       value: kpis.price_drops_detected,
       delta: kpis.price_drops_trend,
       trend: kpis.spark_price_drops,
       format: formatNumber,
       color: 'var(--color-warning)',
-      period: 'vs last week',
+      period: t('overview.kpi.vsLastWeek'),
     },
     {
       id: 'savings',
       href: '/app/opportunities?sort=biggest_price_drop',
-      label: 'Estimated Savings Found',
+      label: t('overview.kpi.savings'),
       value: kpis.estimated_savings,
       delta: kpis.savings_trend,
       trend: kpis.spark_savings,
       format: (n: number) => formatMoney(n, { compact: true }),
       color: 'var(--color-positive)',
-      period: 'Illustrative estimate · sample data',
+      period: t('overview.kpi.savingsNote'),
     },
   ];
 

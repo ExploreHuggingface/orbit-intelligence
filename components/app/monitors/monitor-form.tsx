@@ -14,6 +14,7 @@ import { Modal } from '@/components/ui/modal';
 import { createMonitorAction, updateMonitorAction, type MutationResult } from '@/lib/actions/app';
 import { CATEGORIES, CATEGORY_LABELS, type Category, type Monitor, type MonitorSensitivity } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const SENSITIVITIES: Array<{ value: MonitorSensitivity; label: string; hint: string }> = [
   { value: 'broad', label: 'Broad', hint: 'More matches, including loose ones — good for rare items.' },
@@ -117,6 +118,7 @@ export function MonitorForm(props: MonitorFormProps) {
   const [serverFieldErrors, setServerFieldErrors] = React.useState<Record<string, string>>({});
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- read via setDismissed flow below
   const [dismissed, setDismissed] = React.useState(false);
+  const { t } = useI18n();
 
   const limitReached = mode === 'create' && planMonitorLimit >= 0 && activeMonitors >= planMonitorLimit;
   const fieldErrors = { ...serverFieldErrors, ...(result?.fieldErrors ?? {}) };
@@ -133,10 +135,10 @@ export function MonitorForm(props: MonitorFormProps) {
   }, [prefill, mode]);
 
   const steps = [
-    { title: 'Define', description: 'What to watch' },
-    { title: 'Criteria', description: 'Filters & sensitivity' },
-    { title: 'Notifications', description: 'How to alert you' },
-    { title: 'Review', description: 'Confirm & activate' },
+    { title: t('monitors.wizard.define'), description: t('monitors.wizard.whatToWatch') },
+    { title: t('monitors.wizard.criteria'), description: t('monitors.wizard.filters') },
+    { title: t('monitors.wizard.notifications'), description: t('monitors.wizard.howToAlert') },
+    { title: t('monitors.wizard.review'), description: t('monitors.wizard.confirm') },
   ];
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
@@ -189,7 +191,7 @@ export function MonitorForm(props: MonitorFormProps) {
       {limitReached && (
         <FormAlert>
           <span>
-            Your {planName} plan allows {planMonitorLimit} monitors ({activeMonitors} active).{' '}
+            {t('monitors.wizard.limitReached', { plan: planName, limit: planMonitorLimit })}{' '}
             <a href="/app/settings?tab=plan" className="font-medium underline">
               Upgrade to add more
             </a>
@@ -244,7 +246,7 @@ export function MonitorForm(props: MonitorFormProps) {
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
-                    {CATEGORY_LABELS[c]}
+                    {t(`category.${c}` as never)}
                   </option>
                 ))}
               </select>
@@ -458,7 +460,7 @@ export function MonitorForm(props: MonitorFormProps) {
           </Button>
         ) : (
           <Button size="sm" isLoading={pending} disabled={limitReached || pending} onClick={submitForm} leftIcon={<Sparkles className="size-4" />}>
-            {mode === 'edit' ? 'Save changes' : 'Activate Monitor'}
+            {mode === 'edit' ? t('monitors.wizard.saveChanges') : t('monitors.wizard.activate')}
           </Button>
         )}
       </div>
@@ -470,8 +472,8 @@ export function MonitorForm(props: MonitorFormProps) {
       <Modal
         open
         onClose={() => onCancel?.()}
-        title={mode === 'edit' ? 'Edit monitor' : 'New Monitor'}
-        description={mode === 'edit' ? 'Update your watch criteria' : 'Describe what you want — ORBIT watches sources for you'}
+        title={mode === 'edit' ? t('monitors.editMonitor') : t('monitors.newMonitor')}
+        description={mode === 'edit' ? t('monitors.updateSubtitle') : t('monitors.newSubtitle')}
         className="max-w-2xl"
       >
         {body}

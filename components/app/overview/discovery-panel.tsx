@@ -5,8 +5,9 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowRight, Search } from 'lucide-react';
 import { Button } from '@/components/easyui/Button';
-import { CATEGORIES, CATEGORY_LABELS, type Category } from '@/lib/types';
+import { CATEGORIES, type Category } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const EXAMPLES: Record<Category, string[]> = {
   real_estate: [
@@ -24,6 +25,7 @@ export function DiscoveryPanel({ recentQueries }: { recentQueries: string[] }) {
   const router = useRouter();
   const [query, setQuery] = React.useState('');
   const [category, setCategory] = React.useState<Category | 'all'>('all');
+  const { t } = useI18n();
 
   const submit = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -40,10 +42,10 @@ export function DiscoveryPanel({ recentQueries }: { recentQueries: string[] }) {
   return (
     <section aria-labelledby="discovery-heading" className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
       <h2 id="discovery-heading" className="text-base font-semibold text-[var(--text-primary)]">
-        What are you looking for?
+        {t('overview.searchHeading')}
       </h2>
       <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">
-        Describe it once — ORBIT scores every match against reference values.
+        {t('overview.searchHint')}
       </p>
       <form onSubmit={submit} className="mt-4 space-y-3" role="search">
         <div className="relative">
@@ -52,7 +54,7 @@ export function DiscoveryPanel({ recentQueries }: { recentQueries: string[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g. 2-room apartment Berlin under €350k with 5%+ yield…"
+            placeholder={t('overview.searchPlaceholder')}
             aria-label="Search opportunities"
             className="focus-ring h-12 w-full rounded-lg border border-[var(--border)] bg-[var(--color-surface-subtle)] pl-11 pr-4 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-tertiary,var(--text-subtle))]"
           />
@@ -71,18 +73,18 @@ export function DiscoveryPanel({ recentQueries }: { recentQueries: string[] }) {
                   : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
               )}
             >
-              {c === 'all' ? 'All' : CATEGORY_LABELS[c]}
+              {t(`category.${c}` as never)}
             </button>
           ))}
         </div>
         <Button type="submit" size="md" rightIcon={<ArrowRight className="size-4" />} fullWidth>
-          Discover Opportunities
+          {t('overview.discoverCta')}
         </Button>
       </form>
 
       {recentQueries.length > 0 && (
         <div className="mt-4 border-t border-[var(--border-subtle)] pt-3">
-          <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">Recent searches</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">{t('overview.recentSearches')}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             {recentQueries.slice(0, 4).map((q) => (
               <button
@@ -100,7 +102,7 @@ export function DiscoveryPanel({ recentQueries }: { recentQueries: string[] }) {
 
       <div className="mt-4 border-t border-[var(--border-subtle)] pt-3">
         <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-          Example queries — {category === 'all' ? 'Real Estate' : CATEGORY_LABELS[category]}
+          {t('overview.exampleQueries')} — {t(`category.${category === 'all' ? 'real_estate' : category}` as never)}
         </p>
         <ul className="mt-1.5 space-y-1">
           {EXAMPLES[category === 'all' ? 'real_estate' : category].map((ex) => (

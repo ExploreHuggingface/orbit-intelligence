@@ -1,4 +1,5 @@
 import { requireUser } from '@/lib/auth/server';
+import { getI18n } from '@/lib/i18n/server';
 import * as searchRepo from '@/lib/data/search';
 import * as collectionsRepo from '@/lib/data/collections';
 import { getComparableOpportunities } from '@/lib/data/search';
@@ -13,6 +14,7 @@ export default async function ComparisonsPage({
   searchParams: Promise<{ ids?: string; collection?: string }>;
 }) {
   const user = await requireUser('/app/comparisons');
+  const { t } = await getI18n();
   const { ids, collection: collectionId } = await searchParams;
 
   // Candidates: latest 40 visible opportunities.
@@ -32,10 +34,9 @@ export default async function ComparisonsPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Comparisons</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{t('comp.title')}</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Line up 2–{billing?.plan.comparison_limit ?? 2} opportunities and see where the value is. Max{' '}
-          {billing?.plan.comparison_limit ?? 2} on your {billing?.plan.name ?? 'Free'} plan.
+          {t('comp.subtitle', { limit: billing?.plan.comparison_limit ?? 2, plan: billing?.plan.name ?? 'Free' })}
         </p>
       </div>
       <ComparisonBuilder

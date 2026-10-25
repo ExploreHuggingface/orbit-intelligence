@@ -1,6 +1,26 @@
+'use client';
+
 /* Marketing footer (plan §16): 4 columns + bottom bar, no fake social links. */
 import Link from 'next/link';
 import { OrbitMark } from '@/components/ui/logo';
+import { useI18n } from '@/lib/i18n/context';
+import { LanguageSelector } from '@/components/ui/language-selector';
+
+const FOOTER_KEYS: Record<string, never> = {
+  Features: 'm.footer.features',
+  Pricing: 'm.header.pricing',
+  Changelog: 'm.footer.changelog',
+  Roadmap: 'm.footer.roadmap',
+  'Real Estate': 'm.header.realEstate',
+  'Watches & Collectors': 'm.footer.watchesCollectors',
+  'Cars & Parts': 'm.footer.carsParts',
+  About: 'm.header.about',
+  Blog: 'm.header.blog',
+  Contact: 'm.footer.contact',
+  Careers: 'm.footer.careers',
+  Privacy: 'm.footer.privacy',
+  Terms: 'm.footer.terms',
+} as unknown as Record<string, never>;
 
 const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string; external?: boolean }> }> = [
   {
@@ -39,6 +59,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; href: string
 ];
 
 export function SiteFooter() {
+  const { t } = useI18n();
   return (
     <footer className="border-t border-[var(--color-line)] bg-white">
       <div className="mx-auto max-w-[1200px] px-6 py-14">
@@ -46,7 +67,7 @@ export function SiteFooter() {
           {COLUMNS.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h3 className="text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--color-ink-tertiary)]">
-                {col.title}
+                {t(`m.footer.${{ Product: 'product', Company: 'company', Legal: 'legal' }[col.title as string] ?? 'useCases'}` as never)}
               </h3>
               <ul className="mt-3 space-y-2">
                 {col.links.map((link) => (
@@ -55,7 +76,7 @@ export function SiteFooter() {
                       href={link.href}
                       className="focus-ring rounded text-[14px] text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
                     >
-                      {link.label}
+                      {t(FOOTER_KEYS[link.label] ?? 'm.footer.useCases')}
                     </Link>
                   </li>
                 ))}
@@ -67,13 +88,14 @@ export function SiteFooter() {
           <div className="flex items-center gap-2.5">
             <OrbitMark size={20} />
             <span className="text-[13px] text-[var(--color-ink-tertiary)]">
-              © 2026 ORBIT Intelligence. Made for operators who move first.
+              {t('m.footer.copyright')}
             </span>
           </div>
+          <LanguageSelector variant="light" className="mb-3 mx-auto sm:mx-0" />
           <p className="max-w-md text-center text-[12px] leading-relaxed text-[var(--color-ink-tertiary)] sm:text-right">
-            We use cookies for essential site functionality only. We never sell your data — see our{' '}
+            {t('m.footer.cookieNote')}{' '}
             <Link href="/privacy" className="underline hover:text-[var(--color-ink-secondary)]">
-              privacy policy
+              {t('m.footer.privacyPolicy')}
             </Link>
             .
           </p>

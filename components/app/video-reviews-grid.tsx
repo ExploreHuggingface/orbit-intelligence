@@ -7,8 +7,9 @@ import { ExternalLink, Play, PlaySquare, Search } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { OrbitBadge } from '@/components/ui/badges';
-import { CATEGORY_LABELS, CATEGORIES, type Category, type VideoReview } from '@/lib/types';
+import { CATEGORIES, type Category, type VideoReview } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const GRADIENTS: Record<Category, string> = {
   real_estate: 'linear-gradient(135deg, #1D2939, #475467)',
@@ -21,6 +22,7 @@ const GRADIENTS: Record<Category, string> = {
 export function VideoReviewsGrid({ videos }: { videos: VideoReview[] }) {
   const [query, setQuery] = React.useState('');
   const [category, setCategory] = React.useState<Category | 'all'>('all');
+  const { t } = useI18n();
 
   const filtered = videos.filter((v) => {
     if (category !== 'all' && v.category !== category) return false;
@@ -44,8 +46,8 @@ export function VideoReviewsGrid({ videos }: { videos: VideoReview[] }) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search reviews…"
-            aria-label="Search video reviews"
+            placeholder={t('vr.searchPlaceholder')}
+            aria-label={t('common.search')}
             className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-[13px] placeholder:text-[var(--text-subtle)]"
           />
         </div>
@@ -63,14 +65,14 @@ export function VideoReviewsGrid({ videos }: { videos: VideoReview[] }) {
                   : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              {c === 'all' ? 'All' : CATEGORY_LABELS[c]}
+              {t(`category.${c}` as never)}
             </button>
           ))}
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={PlaySquare} title="No videos match" description="Try a different search or category." />
+        <EmptyState icon={PlaySquare} title={t('vr.noVideos')} description={t('vr.noVideosHint')} />
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((v) => (
@@ -81,7 +83,7 @@ export function VideoReviewsGrid({ videos }: { videos: VideoReview[] }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="focus-ring block rounded-xl"
-                  aria-label={`Watch: ${v.title} (${v.duration}, opens on ${v.source})`}
+                  aria-label={t('vr.watch', { title: v.title, duration: v.duration, source: v.source })}
                 >
                   <div
                     className="relative flex aspect-video items-center justify-center rounded-t-xl border-b border-[var(--border-subtle)]"
@@ -97,7 +99,7 @@ export function VideoReviewsGrid({ videos }: { videos: VideoReview[] }) {
                   </div>
                   <CardContent className="space-y-2 pb-3">
                     <div className="flex items-center justify-between gap-2">
-                      <OrbitBadge tone="neutral">{CATEGORY_LABELS[v.category]}</OrbitBadge>
+                      <OrbitBadge tone="neutral">{t(`category.${v.category}` as never)}</OrbitBadge>
                       <span className="text-[11px] text-[var(--text-muted)]">{v.source}</span>
                     </div>
                     <p className="line-clamp-2 text-[13px] font-medium leading-snug text-[var(--text-primary)]">{v.title}</p>
@@ -119,7 +121,7 @@ export function VideoReviewsGrid({ videos }: { videos: VideoReview[] }) {
         </ul>
       )}
       <p className="text-[11px] text-[var(--text-muted)]">
-        Curated sample content — external links are illustrative and point to public searches on the source platform.
+        {t('vr.note')}
       </p>
     </div>
   );

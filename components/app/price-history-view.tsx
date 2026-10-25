@@ -14,6 +14,7 @@ import { Money } from '@/components/ui/atoms';
 import { EstimateTag } from '@/components/ui/badges';
 import { formatDate, formatMoney } from '@/lib/utils/format';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 export interface TrackedItem {
   id: string;
@@ -28,6 +29,7 @@ export interface TrackedItem {
 export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
   const [query, setQuery] = React.useState('');
   const [selectedId, setSelectedId] = React.useState<string | null>(items[0]?.id ?? null);
+  const { t } = useI18n();
 
   const filtered = React.useMemo(() => {
     if (!query) return items;
@@ -38,7 +40,7 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
   const selected = items.find((i) => i.id === selectedId) ?? null;
 
   const timelineColumns: Column<{ id: string; date: string; price: number }>[] = [
-    { key: 'date', header: 'Date', cell: (r) => formatDate(r.date) },
+    { key: 'date', header: t('ph.date'), cell: (r) => formatDate(r.date) },
     {
       key: 'event',
       header: 'Event',
@@ -46,7 +48,7 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
         const idx = selected?.points.findIndex((p) => p.date === r.date) ?? -1;
         const prev = idx > 0 ? selected?.points[idx - 1]?.price : undefined;
         const event =
-          prev != null && r.price < prev ? 'Price reduced' : prev != null && r.price > prev ? 'Price increased' : 'Observed';
+          prev != null && r.price < prev ? t('ph.reduced') : prev != null && r.price > prev ? t('ph.increased') : t('ph.observed');
         return <span className="text-[var(--text-secondary)]">{event}</span>;
       },
     },
@@ -58,9 +60,9 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
     },
     {
       key: 'source',
-      header: 'Source',
+      header: t('ph.source'),
       align: 'right',
-      cell: () => <span className="text-[var(--text-muted)]">Sample observation</span>,
+      cell: () => <span className="text-[var(--text-muted)]">{t('ph.sampleObservation')}</span>,
     },
   ];
 
@@ -82,8 +84,8 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tracked items…"
-              aria-label="Search tracked items"
+              placeholder={t('ph.searchTracked')}
+              aria-label={t('ph.searchTracked')}
               className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-[13px] placeholder:text-[var(--text-subtle)]"
             />
           </div>
@@ -111,7 +113,7 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
             ))}
             {filtered.length === 0 && (
               <li className="p-4">
-                <EmptyState icon={History} title="No tracked items match" description="Try a different search term." />
+                <EmptyState icon={History} title={t('ph.noTracked')} description={t('ph.noTrackedHint')} />
               </li>
             )}
           </ul>
@@ -125,10 +127,10 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
                 <div className="min-w-0">
                   <CardTitle className="truncate">{selected.title}</CardTitle>
                   <p className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                    {selected.category_label} · tracked since {formatDate(selected.first_seen)}
+                    {selected.category_label} · {t('ph.trackedSince', { date: formatDate(selected.first_seen) })}
                     {selected.reference_value != null && (
                       <>
-                        <span aria-hidden>·</span> reference {formatMoney(selected.reference_value, { compact: true })}
+                        <span aria-hidden>·</span> {t('ph.reference')} {formatMoney(selected.reference_value, { compact: true })}
                         <EstimateTag />
                       </>
                     )}
@@ -152,7 +154,7 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Observation timeline</CardTitle>
+                <CardTitle>{t('ph.timeline')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <DataTable
@@ -165,7 +167,7 @@ export function PriceHistoryView({ items }: { items: TrackedItem[] }) {
             </Card>
           </div>
         ) : (
-          <EmptyState icon={History} title="Select a tracked item" description="Pick an item on the left to view its full price history." />
+          <EmptyState icon={History} title={t('ph.selectItem')} description={t('ph.selectItemHint')} />
         )}
       </div>
     </div>

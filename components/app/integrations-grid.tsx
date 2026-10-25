@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { OrbitBadge } from '@/components/ui/badges';
 import { Modal } from '@/components/ui/modal';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 interface Integration {
   name: string;
@@ -35,6 +36,7 @@ const WORKFLOWS: Integration[] = [
 export function IntegrationsGrid() {
   const [requested, setRequested] = React.useState<Integration | null>(null);
   const [requestedNames, setRequestedNames] = React.useState<string[]>([]);
+  const { t } = useI18n();
 
   const card = (integration: Integration) => {
     const isRequested = requestedNames.includes(integration.name);
@@ -48,10 +50,10 @@ export function IntegrationsGrid() {
               </span>
               <div>
                 <p className="text-[13px] font-semibold text-[var(--text-primary)]">{integration.name}</p>
-                <p className="text-[11px] capitalize text-[var(--text-muted)]">{integration.kind === 'source' ? 'Marketplace source' : 'Workflow'}</p>
+                <p className="text-[11px] capitalize text-[var(--text-muted)]">{integration.kind === 'source' ? t('int.sourceKind') : t('int.workflowKind')}</p>
               </div>
             </div>
-            <OrbitBadge tone="neutral">Not yet connected</OrbitBadge>
+            <OrbitBadge tone="neutral">{t('label.notYetConnected')}</OrbitBadge>
           </div>
           <p className="flex-1 text-xs leading-relaxed text-[var(--text-secondary)]">{integration.description}</p>
           <button
@@ -65,7 +67,7 @@ export function IntegrationsGrid() {
                 : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
             )}
           >
-            {isRequested ? 'Request submitted' : 'Request integration'}
+            {isRequested ? t('int.requested') : t('int.request')}
           </button>
         </CardContent>
       </Card>
@@ -84,14 +86,14 @@ export function IntegrationsGrid() {
 
       <section aria-labelledby="sources-heading">
         <h2 id="sources-heading" className="mb-3 text-sm font-semibold uppercase tracking-[0.02em] text-[var(--text-muted)]">
-          Marketplace sources
+          {t('int.sources')}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{SOURCES.map(card)}</div>
       </section>
 
       <section aria-labelledby="workflows-heading">
         <h2 id="workflows-heading" className="mb-3 text-sm font-semibold uppercase tracking-[0.02em] text-[var(--text-muted)]">
-          Workflows & notifications
+          {t('int.workflows')}
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{WORKFLOWS.map(card)}</div>
       </section>
@@ -99,8 +101,8 @@ export function IntegrationsGrid() {
       <Modal
         open={requested !== null}
         onClose={() => setRequested(null)}
-        title={requested ? `Request ${requested.name} integration` : ''}
-        description={requested ? `You're asking for ${requested.name} to be prioritized in the connector pipeline.` : undefined}
+        title={requested ? t('int.requestTitle', { name: requested.name }) : ''}
+        description={requested ? t('int.requestDesc', { name: requested.name }) : undefined}
         footer={
           <>
             <button
@@ -108,7 +110,7 @@ export function IntegrationsGrid() {
               onClick={() => setRequested(null)}
               className="focus-ring h-9 rounded-lg border border-[var(--border)] px-3.5 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -118,14 +120,13 @@ export function IntegrationsGrid() {
               }}
               className="focus-ring h-9 rounded-lg bg-[var(--accent)] px-3.5 text-sm font-medium text-white hover:opacity-90"
             >
-              Submit request
+              {t('int.submitRequest')}
             </button>
           </>
         }
       >
         <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
-          Connectors require the production crawling backend, which goes live after launch. Your request tells us
-          which sources to build first — we&apos;ll notify you when it ships.
+          {t('int.requestBody')}
         </p>
       </Modal>
     </div>

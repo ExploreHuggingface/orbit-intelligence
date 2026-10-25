@@ -11,10 +11,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { RelativeTime } from '@/components/ui/atoms';
 import { setMonitorStatusAction } from '@/lib/actions/app';
 import { toastSuccess, actionError } from '@/components/ui/toast-helpers';
+import { useI18n } from '@/lib/i18n/context';
 import { CATEGORY_LABELS, type Monitor } from '@/lib/types';
 
 export function ActiveMonitors({ monitors }: { monitors: Monitor[] }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [busy, setBusy] = React.useState<string | null>(null);
 
   const toggle = async (m: Monitor) => {
@@ -30,23 +32,23 @@ export function ActiveMonitors({ monitors }: { monitors: Monitor[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Active Monitors</CardTitle>
+        <CardTitle>{t('overview.monitorsWidget')}</CardTitle>
         <span className="tnum text-xs text-[var(--text-muted)]">
-          {monitors.filter((m) => m.status === 'active').length} active / {monitors.length} total
+          {t('overview.monitorsActiveTotal', { total: monitors.length }).replace('{total}', String(monitors.length))}
         </span>
       </CardHeader>
       <CardContent className="space-y-1 p-2">
         {monitors.length === 0 ? (
           <EmptyState
             icon={Radar}
-            title="No monitors yet"
-            description="Create a monitor and ORBIT will watch sources for matches."
+            title={t('overview.noMonitors')}
+            description={t('overview.noMonitorsHint')}
             action={
               <Link
                 href="/app/monitors?new=1"
                 className="focus-ring inline-flex h-9 items-center rounded-lg bg-[var(--accent)] px-3.5 text-[13px] font-medium text-white hover:opacity-90"
               >
-                Create Monitor
+                {t('overview.createMonitor')}
               </Link>
             }
             className="border-0 py-8"
@@ -65,15 +67,15 @@ export function ActiveMonitors({ monitors }: { monitors: Monitor[] }) {
                   >
                     {m.name}
                   </Link>
-                  {m.status === 'paused' && <OrbitBadge tone="neutral">Paused</OrbitBadge>}
+                  {m.status === 'paused' && <OrbitBadge tone="neutral">{t('status.paused')}</OrbitBadge>}
                 </div>
                 <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-[var(--text-muted)]">
                   <span>{CATEGORY_LABELS[m.category]}</span>
                   <span aria-hidden>·</span>
-                  <span className="tnum">{m.match_count} matches</span>
+                  <span className="tnum">{m.match_count} {t('overview.context.matches')}</span>
                   <span aria-hidden>·</span>
                   <span>
-                    checked <RelativeTime iso={m.last_checked_at} />
+                    {t('overview.checked')} <RelativeTime iso={m.last_checked_at} />
                   </span>
                   <span className="inline-flex items-center gap-0.5" title={m.notify_in_app ? 'In-app alerts on' : 'Alerts off'}>
                     {m.notify_in_app ? <Bell className="size-3" /> : <BellOff className="size-3" />}
@@ -98,13 +100,13 @@ export function ActiveMonitors({ monitors }: { monitors: Monitor[] }) {
           href="/app/monitors?new=1"
           className="focus-ring rounded text-xs font-medium text-[color:var(--color-brand)] hover:underline"
         >
-          + Create Monitor
+          + {t('overview.createMonitor')}
         </Link>
         <Link
           href="/app/monitors"
           className="focus-ring inline-flex items-center gap-1 rounded text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         >
-          View all <ArrowRight className="size-3.5" aria-hidden />
+          {t('common.viewAll')} <ArrowRight className="size-3.5" aria-hidden />
         </Link>
       </CardFooter>
     </Card>

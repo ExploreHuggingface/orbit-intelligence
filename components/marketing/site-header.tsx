@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { OrbitMark } from '@/components/ui/logo';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 interface NavLink {
   label: string;
@@ -19,30 +21,38 @@ const NAV: NavLink[] = [
     label: 'Product',
     href: '/features',
     children: [
-      { label: 'Features overview', href: '/features', description: 'Everything ORBIT does' },
-      { label: 'Monitors', href: '/features/monitors', description: 'Watches that never sleep' },
-      { label: 'Deal scores', href: '/features/deal-scores', description: 'Every match, priced against reference' },
-      { label: 'Alerts', href: '/features/alerts', description: 'Know the moment something appears' },
+      { label: 'm.header.featuresOverview', href: '/features', description: 'm.header.featuresOverviewDesc' },
+      { label: 'm.header.monitors', href: '/features/monitors', description: 'm.header.monitorsDesc' },
+      { label: 'm.header.dealScores', href: '/features/deal-scores', description: 'm.header.dealScoresDesc' },
+      { label: 'm.header.alerts', href: '/features/alerts', description: 'm.header.alertsDesc' },
     ],
   },
   {
     label: 'Use Cases',
     href: '/use-cases',
     children: [
-      { label: 'Real Estate', href: '/use-cases/real-estate', description: 'Yield-first property hunting' },
-      { label: 'Collectors', href: '/use-cases/collectors', description: 'Watches and rare pieces' },
-      { label: 'Deal Hunters', href: '/use-cases/deal-hunting', description: 'Cars, parts, electronics' },
+      { label: 'm.header.realEstate', href: '/use-cases/real-estate', description: 'm.header.realEstateDesc' },
+      { label: 'm.header.collectors', href: '/use-cases/collectors', description: 'm.header.collectorsDesc' },
+      { label: 'm.header.dealHunters', href: '/use-cases/deal-hunting', description: 'm.header.dealHuntersDesc' },
     ],
   },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'About', href: '/about' },
+  { label: 'm.header.pricing', href: '/pricing' },
+  { label: 'm.header.blog', href: '/blog' },
+  { label: 'm.header.about', href: '/about' },
+];
+const TOP_NAV: Array<{ key: string; childrenKey?: string }> = [
+  { key: 'm.header.product', childrenKey: 'Product' },
+  { key: 'm.header.useCases', childrenKey: 'Use Cases' },
+  { key: 'm.header.pricing' },
+  { key: 'm.header.blog' },
+  { key: 'm.header.about' },
 ];
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = React.useState(false);
   const [openMenu, setOpenMenu] = React.useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const { t } = useI18n();
   const headerRef = React.useRef<HTMLElement>(null);
 
   React.useEffect(() => {
@@ -102,7 +112,7 @@ export function SiteHeader() {
                       openMenu === item.label ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]'
                     )}
                   >
-                    {item.label}
+                    {t(item.label.startsWith('m.') ? (item.label as never) : ('m.header.product' as never))}
                     <ChevronDown className={cn('size-3.5 transition-transform', openMenu === item.label && 'rotate-180')} aria-hidden />
                   </button>
                 ) : (
@@ -110,7 +120,7 @@ export function SiteHeader() {
                     href={item.href}
                     className="focus-ring inline-flex h-9 items-center rounded-lg px-3 text-[14px] font-medium text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
                   >
-                    {item.label}
+                    {t((TOP_NAV.find((n) => n.childrenKey === item.label)?.key ?? item.label) as never)}
                   </Link>
                 )}
                 {item.children && openMenu === item.label && (
@@ -128,9 +138,9 @@ export function SiteHeader() {
                         onClick={() => setOpenMenu(null)}
                         className="focus-ring block rounded-lg px-3 py-2.5 hover:bg-[var(--color-canvas)]"
                       >
-                        <span className="block text-[14px] font-medium text-[var(--color-ink)]">{child.label}</span>
+                        <span className="block text-[14px] font-medium text-[var(--color-ink)]">{t(child.label as never)}</span>
                         {child.description && (
-                          <span className="block text-[12px] text-[var(--color-ink-tertiary)]">{child.description}</span>
+                          <span className="block text-[12px] text-[var(--color-ink-tertiary)]">{t(child.description as never)}</span>
                         )}
                       </Link>
                     ))}
@@ -141,17 +151,18 @@ export function SiteHeader() {
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
+            <LanguageSelector variant="light" className="mr-1" />
             <Link
               href="/login"
               className="focus-ring inline-flex h-9 items-center rounded-lg px-3 text-[14px] font-medium text-[var(--color-ink-secondary)] hover:text-[var(--color-ink)]"
             >
-              Sign in
+              {t('common.signIn')}
             </Link>
             <Link
               href="/signup"
               className="focus-ring inline-flex h-9 items-center rounded-lg bg-[var(--color-ink)] px-4 text-[14px] font-medium text-white hover:opacity-90"
             >
-              Start free
+              {t('common.startFree')}
             </Link>
           </div>
 
@@ -192,7 +203,7 @@ export function SiteHeader() {
                   onClick={() => setMobileOpen(false)}
                   className="focus-ring block rounded text-[16px] font-semibold text-[var(--color-ink)]"
                 >
-                  {item.label}
+                  {t((TOP_NAV.find((n) => n.childrenKey === item.label)?.key ?? item.label) as never)}
                 </Link>
                 {item.children && (
                   <div className="mt-2 space-y-1.5 pl-3">
@@ -203,7 +214,7 @@ export function SiteHeader() {
                         onClick={() => setMobileOpen(false)}
                         className="focus-ring block rounded text-[14px] text-[var(--color-ink-secondary)]"
                       >
-                        {child.label}
+                        {t(child.label as never)}
                       </Link>
                     ))}
                   </div>

@@ -17,6 +17,7 @@ import { ActivityCard } from '@/components/app/overview/activity-feed';
 import { MarketChartsSection } from '@/components/app/overview/market-charts-section';
 import { ContextPanel } from '@/components/app/overview/context-panel';
 import { Card, CardContent, CardHeader, CardTitle, CardSubtitle } from '@/components/ui/card';
+import { getI18n } from '@/lib/i18n/server';
 import type { Category } from '@/lib/types';
 
 export const metadata = { title: 'Overview' };
@@ -27,6 +28,7 @@ export default async function OverviewPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser('/app/overview');
+  const { t } = await getI18n();
   const params = await searchParams;
   const one = (k: string): string | undefined => (Array.isArray(params[k]) ? params[k][0] : params[k]) as string | undefined;
 
@@ -75,10 +77,10 @@ export default async function OverviewPage({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-            Your next opportunity is out there.
+            {t('overview.title')}
           </h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Your internet intelligence, organized in one place.
+            {t('overview.subtitle')}
           </p>
         </div>
         <Link
@@ -99,8 +101,8 @@ export default async function OverviewPage({
           <Card>
             <CardHeader>
               <div>
-                <CardTitle>Fresh Opportunities</CardTitle>
-                <CardSubtitle>Newest matches across your tracked sources</CardSubtitle>
+                <CardTitle>{t('overview.freshTitle')}</CardTitle>
+                <CardSubtitle>{t('overview.freshSubtitle')}</CardSubtitle>
               </div>
             </CardHeader>
             <CardContent>

@@ -6,8 +6,9 @@
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Filter, SlidersHorizontal, X } from 'lucide-react';
-import { CATEGORIES, CATEGORY_LABELS, type Category } from '@/lib/types';
+import { CATEGORIES, type Category } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 export interface Facets {
   cities: string[];
@@ -22,6 +23,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
   const router = useRouter();
   const searchParams = useSearchParams();
   const [open, setOpen] = React.useState(false);
+  const { t } = useI18n();
 
   const setParams = (patch: Params) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -68,7 +70,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--text-primary)]">
-          <SlidersHorizontal className="size-3.5" aria-hidden /> Filters
+          <SlidersHorizontal className="size-3.5" aria-hidden /> {t('filter.title')}
           {activeCount > 0 && (
             <span className="tnum rounded-full bg-[color:var(--color-brand-subtle)] px-1.5 text-[11px] text-[color:var(--color-brand)]">
               {activeCount}
@@ -87,7 +89,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
             }
             className="focus-ring rounded text-xs text-[color:var(--color-brand)] hover:underline"
           >
-            Clear all
+            {t('common.clearAll')}
           </button>
         )}
       </div>
@@ -95,7 +97,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
       {/* Price range — all categories */}
       <div className="space-y-1.5">
         <label className="block text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-          Price range (€)
+          {t('filter.priceRange')}
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -105,7 +107,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
             key={`pmin-${one('price_min')}`}
             onBlur={(e) => setParams({ price_min: e.target.value || null })}
             onKeyDown={(e) => e.key === 'Enter' && setParams({ price_min: (e.target as HTMLInputElement).value || null })}
-            placeholder="min"
+            placeholder={t('filter.min')}
             aria-label="Minimum price"
             className="focus-ring tnum h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px]"
           />
@@ -117,7 +119,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
             key={`pmax-${one('price_max')}`}
             onBlur={(e) => setParams({ price_max: e.target.value || null })}
             onKeyDown={(e) => e.key === 'Enter' && setParams({ price_max: (e.target as HTMLInputElement).value || null })}
-            placeholder="max"
+            placeholder={t('filter.max')}
             aria-label="Maximum price"
             className="focus-ring tnum h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px]"
           />
@@ -128,7 +130,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
         <>
           {facets.neighborhoods.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">Neighborhood</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">{t('filter.neighborhood')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {facets.neighborhoods.slice(0, 14).map((n) => (
                   <button key={n} type="button" onClick={() => toggleMulti('neighborhoods', n)} aria-pressed={many('neighborhoods').includes(n)} className={chip(many('neighborhoods').includes(n))}>
@@ -140,7 +142,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
           )}
           <div className="space-y-1.5">
             <label htmlFor="f-prop" className="block text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-              Property type
+              {t('filter.propertyType')}
             </label>
             <select
               id="f-prop"
@@ -148,14 +150,14 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
               onChange={(e) => setParams({ property_type: e.target.value || null })}
               className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px]"
             >
-              <option value="">Any</option>
+              <option value="">{t('filter.any')}</option>
               <option>Apartment</option>
-              <option>Condo</option>
+              <option>Conda</option>
             </select>
           </div>
           <div className="space-y-1.5">
             <label htmlFor="f-bed" className="block text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-              Bedrooms (min)
+              {t('filter.bedroomsMin')}
             </label>
             <select
               id="f-bed"
@@ -163,7 +165,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
               onChange={(e) => setParams({ bedrooms_min: e.target.value || null })}
               className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px]"
             >
-              <option value="">Any</option>
+              <option value="">{t('filter.any')}</option>
               {[1, 2, 3, 4].map((n) => (
                 <option key={n} value={n}>{n}+</option>
               ))}
@@ -171,7 +173,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
           </div>
           <div className="space-y-1.5">
             <label htmlFor="f-yield" className="flex justify-between text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-              Gross yield (min) <span className="tnum text-[var(--text-primary)]">{one('yield_min') ? `${one('yield_min')}%` : '—'}</span>
+              {t('filter.grossYieldMin')} <span className="tnum text-[var(--text-primary)]">{one('yield_min') ? `${one('yield_min')}%` : '—'}</span>
             </label>
             <input
               id="f-yield"
@@ -186,7 +188,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
           </div>
           <div className="space-y-1.5">
             <label htmlFor="f-ppm2" className="block text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-              Price / m² (max)
+              {t('filter.pricePerM2Max')}
             </label>
             <input
               id="f-ppm2"
@@ -205,7 +207,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
         <>
           {facets.brands.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">Brand</p>
+              <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">{t('filter.brand')}</p>
               <div className="flex max-h-40 flex-wrap gap-1.5 overflow-y-auto">
                 {facets.brands.slice(0, 16).map((b) => (
                   <button key={b} type="button" onClick={() => toggleMulti('brand', b)} aria-pressed={many('brand').includes(b)} className={chip(many('brand').includes(b))}>
@@ -217,7 +219,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
           )}
           <div className="space-y-1.5">
             <label htmlFor="f-cond" className="block text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">
-              Condition
+              {t('filter.condition')}
             </label>
             <select
               id="f-cond"
@@ -225,7 +227,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
               onChange={(e) => setParams({ condition: e.target.value || null })}
               className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px]"
             >
-              <option value="">Any</option>
+              <option value="">{t('filter.any')}</option>
               <option value="Excellent">Excellent</option>
               <option value="Very good">Very good</option>
               <option value="Grade A">Grade A</option>
@@ -238,7 +240,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
 
       {facets.marketplaces.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">Marketplace</p>
+          <p className="text-[11px] font-medium uppercase tracking-[0.02em] text-[var(--text-muted)]">{t('filter.marketplace')}</p>
           <div className="flex flex-wrap gap-1.5">
             {facets.marketplaces.slice(0, 10).map((m) => (
               <button key={m} type="button" onClick={() => toggleMulti('marketplaces', m)} aria-pressed={many('marketplaces').includes(m)} className={chip(many('marketplaces').includes(m))}>
@@ -250,7 +252,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
       )}
 
       <label className="flex items-center justify-between rounded-lg border border-[var(--border)] px-3 py-2.5">
-        <span className="text-[13px] font-medium text-[var(--text-primary)]">Price drop only</span>
+        <span className="text-[13px] font-medium text-[var(--text-primary)]">{t('filter.priceDropOnly')}</span>
         <input
           type="checkbox"
           checked={searchParams.get('price_drop_only') === '1'}
@@ -264,7 +266,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
   return (
     <>
       {/* Desktop rail */}
-      <aside className="hidden w-[260px] shrink-0 lg:block" aria-label="Filters">
+      <aside className="hidden w-[260px] shrink-0 lg:block" aria-label={t('filter.title')}>
         <div className="sticky top-0 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">{body}</div>
       </aside>
 
@@ -276,15 +278,15 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
           className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] font-medium text-[var(--text-secondary)]"
         >
           <Filter className="size-3.5" aria-hidden />
-          Filters{activeCount > 0 ? ` (${activeCount})` : ''}
+          {t('filter.title')}{activeCount > 0 ? ` (${activeCount})` : ''}
         </button>
         {open && (
           <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="Filters">
             <div className="absolute inset-0 bg-[color:var(--color-overlay)]" onClick={() => setOpen(false)} aria-hidden />
             <div className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl border-t border-[var(--border)] bg-[var(--surface)] p-5 pb-8">
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm font-semibold">Filters</span>
-                <button type="button" onClick={() => setOpen(false)} aria-label="Close filters" className="focus-ring grid size-8 place-items-center rounded-lg border border-[var(--border)]">
+                <span className="text-sm font-semibold">{t('filter.title')}</span>
+                <button type="button" onClick={() => setOpen(false)} aria-label={t('filter.closeFilters')} className="focus-ring grid size-8 place-items-center rounded-lg border border-[var(--border)]">
                   <X className="size-4" />
                 </button>
               </div>
@@ -294,7 +296,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
                 onClick={() => setOpen(false)}
                 className="focus-ring mt-5 h-10 w-full rounded-lg bg-[var(--accent)] text-sm font-medium text-white"
               >
-                Show results
+                {t('filter.showResults')}
               </button>
             </div>
           </div>
@@ -307,6 +309,7 @@ export function FilterPanel({ facets, category }: { facets: Facets; category: Ca
 export function CategoryChips({ active }: { active: Category | 'all' }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   return (
     <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Category">
       {(['all', ...CATEGORIES] as const).map((c) => (
@@ -328,7 +331,7 @@ export function CategoryChips({ active }: { active: Category | 'all' }) {
               : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
           )}
         >
-          {c === 'all' ? 'All' : CATEGORY_LABELS[c]}
+          {t(`category.${c}` as never)}
         </button>
       ))}
     </div>

@@ -1,4 +1,5 @@
 import { requireUser } from '@/lib/auth/server';
+import { getI18n } from '@/lib/i18n/server';
 import * as collectionsRepo from '@/lib/data/collections';
 import { getHistory } from '@/lib/db/rows';
 import { getDb } from '@/lib/db';
@@ -14,6 +15,7 @@ export default async function CollectionsPage({
   searchParams: Promise<{ collection?: string }>;
 }) {
   const user = await requireUser('/app/collections');
+  const { t } = await getI18n();
   const { collection: collectionId } = await searchParams;
 
   const collections = collectionsRepo.listCollections(user.id);
@@ -31,9 +33,9 @@ export default async function CollectionsPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Collections</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{t('collections.title')}</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Group opportunities you&apos;re tracking. Every action here persists to your workspace.
+          {t('collections.subtitle')}
         </p>
       </div>
       <CollectionsManager

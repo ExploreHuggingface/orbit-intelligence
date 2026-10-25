@@ -12,6 +12,7 @@ import { useDebouncedValue } from '@/lib/hooks';
 import { formatMoney } from '@/lib/utils/format';
 import type { Opportunity } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 export function ComparisonBuilder({
   candidates,
@@ -24,6 +25,7 @@ export function ComparisonBuilder({
 }) {
   const [selected, setSelected] = React.useState<Opportunity[]>(initialSelected);
   const [query, setQuery] = React.useState('');
+  const { t } = useI18n();
   const debounced = useDebouncedValue(query, 300);
   const limitReached = selected.length >= comparisonLimit;
 
@@ -36,15 +38,15 @@ export function ComparisonBuilder({
   const allRealEstate = selected.length > 0 && selected.every((o) => o.real_estate != null);
 
   const rows: Array<{ label: string; values: Array<string | number | null>; better: 'min' | 'max' | null; render?: (v: string | number | null) => React.ReactNode }> = [
-    { label: 'Price', values: selected.map((o) => o.current_price), better: 'min', render: (v) => (v == null ? '—' : formatMoney(Number(v))) },
+    { label: t('table.price'), values: selected.map((o) => o.current_price), better: 'min', render: (v) => (v == null ? '—' : formatMoney(Number(v))) },
     {
-      label: 'Reference value',
+      label: t('table.reference'),
       values: selected.map((o) => o.estimated_market_value),
       better: null,
       render: (v) => (v == null ? '—' : formatMoney(Number(v))),
     },
     {
-      label: 'vs reference',
+      label: t('comp.vsReference'),
       values: selected.map((o) =>
         o.estimated_market_value != null
           ? Math.round(((o.current_price - o.estimated_market_value) / o.estimated_market_value) * 1000) / 10
@@ -53,20 +55,20 @@ export function ComparisonBuilder({
       better: 'min',
       render: (v) => (v == null ? '—' : `${Number(v) > 0 ? '+' : ''}${v}%`),
     },
-    { label: 'Deal score', values: selected.map((o) => o.deal_score), better: 'max', render: (v) => <ScoreBar score={Number(v ?? 0)} /> },
-    { label: 'Match score', values: selected.map((o) => o.match_score), better: 'max' },
+    { label: t('table.dealScore'), values: selected.map((o) => o.deal_score), better: 'max', render: (v) => <ScoreBar score={Number(v ?? 0)} /> },
+    { label: t('opp.matchScore'), values: selected.map((o) => o.match_score), better: 'max' },
     {
-      label: 'Condition',
+      label: t('comp.condition'),
       values: selected.map((o) => (o.attributes.condition ? String(o.attributes.condition) : null)),
       better: null,
     },
     {
-      label: 'Seller / source',
+      label: t('comp.sellerSource'),
       values: selected.map((o) => o.source_marketplace),
       better: null,
     },
     {
-      label: 'Location',
+      label: t('comp.location'),
       values: selected.map((o) => (o.real_estate ? `${o.real_estate.city} — ${o.real_estate.neighborhood}` : null)),
       better: null,
     },
@@ -74,11 +76,11 @@ export function ComparisonBuilder({
 
   if (allRealEstate) {
     rows.push(
-      { label: 'Area (m²)', values: selected.map((o) => o.real_estate?.area_m2 ?? null), better: 'max' },
-      { label: 'Bedrooms', values: selected.map((o) => o.real_estate?.bedrooms ?? null), better: 'max' },
-      { label: 'Est. rent / mo', values: selected.map((o) => o.real_estate?.est_rent_monthly ?? null), better: 'max', render: (v) => (v == null ? '—' : formatMoney(Number(v))) },
-      { label: 'Gross yield', values: selected.map((o) => o.real_estate?.gross_yield_pct ?? null), better: 'max', render: (v) => (v == null ? '—' : `${v}%`) },
-      { label: 'Price / m²', values: selected.map((o) => (o.real_estate ? Math.round(o.current_price / o.real_estate.area_m2) : null)), better: 'min', render: (v) => (v == null ? '—' : formatMoney(Number(v))) }
+      { label: t('comp.areaM2'), values: selected.map((o) => o.real_estate?.area_m2 ?? null), better: 'max' },
+      { label: t('comp.bedrooms'), values: selected.map((o) => o.real_estate?.bedrooms ?? null), better: 'max' },
+      { label: t('comp.estRent'), values: selected.map((o) => o.real_estate?.est_rent_monthly ?? null), better: 'max', render: (v) => (v == null ? '—' : formatMoney(Number(v))) },
+      { label: t('comp.grossYield'), values: selected.map((o) => o.real_estate?.gross_yield_pct ?? null), better: 'max', render: (v) => (v == null ? '—' : `${v}%`) },
+      { label: t('comp.pricePerM2'), values: selected.map((o) => (o.real_estate ? Math.round(o.current_price / o.real_estate.area_m2) : null)), better: 'min', render: (v) => (v == null ? '—' : formatMoney(Number(v))) }
     );
   }
 
@@ -104,8 +106,8 @@ export function ComparisonBuilder({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search opportunities to compare…"
-            aria-label="Search opportunities to compare"
+            placeholder={t('comp.searchPlaceholder')}
+            aria-label={t('comp.searchPlaceholder')}
             disabled={limitReached}
             className="focus-ring h-11 w-full rounded-t-xl border-b border-[var(--border)] bg-[var(--surface)] px-4 text-sm placeholder:text-[var(--text-subtle)] disabled:opacity-50"
           />
@@ -154,7 +156,7 @@ export function ComparisonBuilder({
           ))}
           {selected.length === 0 && (
             <p className="text-[13px] text-[var(--text-muted)]">
-              Pick {comparisonLimit === 2 ? '2' : '2–4'} opportunities to compare side by side.
+              {t('comp.pickHint', { n: comparisonLimit === 2 ? '2' : '2–4' })}
             </p>
           )}
           <span className="tnum ml-auto text-xs text-[var(--text-muted)]">
@@ -166,29 +168,29 @@ export function ComparisonBuilder({
       {selected.length < 2 ? (
         <EmptyState
           icon={GitCompareArrows}
-          title="Select at least 2 opportunities"
+          title={t('comp.emptyTitle')}
           description={
             limitReached
               ? `You've reached ${selected.length}. Compare side-by-side with reference values and yields.`
-              : 'Search above to add opportunities. The best value per row gets a subtle highlight.'
+              : t('comp.emptyHint')
           }
           action={
             <Link
               href="/app/discover"
               className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--border)] px-3.5 text-[13px] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
             >
-              <Plus className="size-4" aria-hidden /> Browse Discover
+              <Plus className="size-4" aria-hidden /> {t('comp.browse')}
             </Link>
           }
         />
       ) : (
         <Card>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[42rem] border-collapse text-left" aria-label="Comparison">
+            <table className="w-full min-w-[42rem] border-collapse text-left" aria-label={t('comp.title')}>
               <thead>
                 <tr className="border-b border-[var(--border)]">
                   <th scope="col" className="h-11 px-4 text-[11px] font-semibold uppercase tracking-[0.02em] text-[var(--text-muted)]">
-                    Attribute
+                    {t('comp.attribute')}
                   </th>
                   {selected.map((o) => (
                     <th key={o.id} scope="col" className="h-11 min-w-44 px-4 text-[13px] font-semibold text-[var(--text-primary)]">
@@ -225,8 +227,7 @@ export function ComparisonBuilder({
             </table>
           </div>
           <p className="border-t border-[var(--border-subtle)] px-4 py-3 text-[11px] text-[var(--text-muted)]">
-            Comparison based on sample data. Estimated values are illustrative — highlighted cells mark the best
-            value per row, not a recommendation.
+            {t('comp.note')}
           </p>
         </Card>
       )}

@@ -14,6 +14,7 @@ import { ScoreBar } from '@/components/ui/score-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { OpportunityDrawer } from '@/components/app/opportunity-drawer';
 import { Sparkles, SearchX } from 'lucide-react';
+import { useI18n } from '@/lib/i18n/context';
 import {
   CATEGORIES,
   CATEGORY_LABELS,
@@ -69,6 +70,7 @@ export function OpportunitiesTable({
   const [searchText, setSearchText] = React.useState(q ?? '');
   const [drawerOpp, setDrawerOpp] = React.useState<Opportunity | null>(null);
   const [sortOpen, setSortOpen] = React.useState(false);
+  const { t } = useI18n();
   const selected = new Set(selectedIds ?? []);
   const toggleSelect = (id: string) => {
     const next = new Set(selected);
@@ -109,7 +111,7 @@ export function OpportunitiesTable({
       : []),
     {
       key: 'item',
-      header: 'Item',
+      header: t('table.item'),
       sortable: false,
       cell: (o) => (
         <div className="min-w-0">
@@ -120,12 +122,12 @@ export function OpportunitiesTable({
     },
     {
       key: 'category',
-      header: 'Category',
-      cell: (o) => <OrbitBadge tone="neutral">{CATEGORY_LABELS[o.category]}</OrbitBadge>,
+      header: t('table.category'),
+      cell: (o) => <OrbitBadge tone="neutral">{t(`category.${o.category}` as never)}</OrbitBadge>,
     },
     {
       key: 'price',
-      header: 'Price',
+      header: t('table.price'),
       align: 'right',
       sortable: true,
       sortValue: (o) => o.current_price,
@@ -142,7 +144,7 @@ export function OpportunitiesTable({
     },
     {
       key: 'reference',
-      header: 'Reference',
+      header: t('table.reference'),
       align: 'right',
       cell: (o) =>
         o.estimated_market_value != null ? (
@@ -153,7 +155,7 @@ export function OpportunitiesTable({
     },
     {
       key: 'deal_score',
-      header: 'Deal score',
+      header: t('table.dealScore'),
       align: 'right',
       sortable: true,
       sortValue: (o) => o.deal_score,
@@ -161,12 +163,12 @@ export function OpportunitiesTable({
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('table.status'),
       cell: (o) => <StatusBadge status={o.status} />,
     },
     {
       key: 'discovered',
-      header: 'Discovered',
+      header: t('table.discovered'),
       align: 'right',
       sortable: true,
       sortValue: (o) => o.discovered_at,
@@ -197,8 +199,8 @@ export function OpportunitiesTable({
             onBlur={() => {
               if ((q ?? '') !== searchText) pushParams({ q: searchText });
             }}
-            placeholder="Search within results…"
-            aria-label="Search within results"
+            placeholder={t('table.searchWithin')}
+            aria-label={t('table.searchWithin')}
             className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-[13px] placeholder:text-[var(--text-subtle)]"
           />
         </div>
@@ -206,10 +208,10 @@ export function OpportunitiesTable({
           <select
             value={category ?? 'all'}
             onChange={(e) => pushParams({ category: e.target.value === 'all' ? null : e.target.value })}
-            aria-label="Filter by category"
+            aria-label={t('table.filterCategory')}
             className="focus-ring h-9 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[13px] text-[var(--text-secondary)]"
           >
-            <option value="all">All categories</option>
+            <option value="all">{t('table.allCategories')}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {CATEGORY_LABELS[c]}
@@ -225,7 +227,7 @@ export function OpportunitiesTable({
             aria-haspopup="menu"
             className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-[13px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
-            Sort: {SORTS.find((s) => s.value === currentSort)?.label ?? 'Newest'}
+            {t('table.sort')}: {SORTS.find((s) => s.value === currentSort) ? t(`table.sort.${currentSort}` as never) : ''}
             <ChevronDown className="size-3.5" aria-hidden />
           </button>
           {sortOpen && (
@@ -256,12 +258,12 @@ export function OpportunitiesTable({
           )}
         </div>
         <p className="tnum ml-auto text-xs text-[var(--text-muted)]" aria-live="polite">
-          {count} {count === 1 ? 'result' : 'results'}
+          {count} {count === 1 ? t('common.result') : t('common.results')}
         </p>
       </div>
 
       <DataTable
-        ariaLabel="Opportunities"
+        ariaLabel={t('nav.opportunities')}
         columns={columns}
         rows={rows}
         isLoading={false}
@@ -280,23 +282,23 @@ export function OpportunitiesTable({
           q || category !== 'all' ? (
             <EmptyState
               icon={SearchX}
-              title="No opportunities match your search"
-              description="Try broadening filters — or create a monitor to be notified when matching items appear."
+              title={t('table.noMatches')}
+              description={t('table.noMatchesHint')}
               action={
                 <button
                   type="button"
                   onClick={() => pushParams({ q: null, category: null })}
                   className="focus-ring h-9 rounded-lg border border-[var(--border)] px-3.5 text-[13px] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
                 >
-                  Clear filters
+                  {t('table.clearFilters')}
                 </button>
               }
             />
           ) : (
             <EmptyState
               icon={Sparkles}
-              title="Nothing here yet"
-              description="Run a discovery search to populate your pipeline."
+              title={t('table.nothingHere')}
+              description={t('table.nothingHereHint')}
             />
           )
         }

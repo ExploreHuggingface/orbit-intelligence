@@ -1,3 +1,5 @@
+'use client';
+
 /* Recent Activity timeline (plan §25.7) — server-rendered, presentational. */
 import Link from 'next/link';
 import {
@@ -16,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { RelativeTime } from '@/components/ui/atoms';
 import type { ActivityEvent, ActivityKind } from '@/lib/types';
+import { useI18n } from '@/lib/i18n/context';
 
 const KIND_META: Record<ActivityKind, { icon: LucideIcon; label: string; tone: string }> = {
   monitor_created: { icon: Radar, label: 'created monitor', tone: 'text-[color:var(--color-brand)]' },
@@ -79,9 +82,11 @@ function describe(kind: ActivityKind, payload: Record<string, unknown>): string 
 }
 
 export function ActivityTimeline({ events, compact = false }: { events: ActivityEvent[]; compact?: boolean }) {
+  const { t } = useI18n();
+  void t;
   if (events.length === 0) {
     return (
-      <EmptyState icon={History} title="No activity yet" description="Your actions and monitor events will appear here." />
+      <EmptyState icon={History} title={t('act.title')} description={t('act.subtitle')} />
     );
   }
   return (
@@ -120,12 +125,13 @@ export function ActivityTimeline({ events, compact = false }: { events: Activity
 }
 
 export function ActivityCard({ events }: { events: ActivityEvent[] }) {
+  const { t } = useI18n();
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
+        <CardTitle>{t('overview.activityTitle')}</CardTitle>
         <Link href="/app/activity" className="focus-ring rounded text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-          View all →
+          {t('common.viewAll')} →
         </Link>
       </CardHeader>
       <CardContent className="p-2">

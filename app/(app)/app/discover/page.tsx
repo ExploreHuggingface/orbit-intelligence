@@ -7,6 +7,7 @@ import { CategoryChips, FilterPanel } from '@/components/app/discover/filter-pan
 import { DiscoverResults } from '@/components/app/discover/discover-results';
 import { Card, CardContent } from '@/components/ui/card';
 import { CATEGORIES, type Category } from '@/lib/types';
+import { getI18n } from '@/lib/i18n/server';
 
 export const metadata = { title: 'Discover' };
 
@@ -22,6 +23,7 @@ export default async function DiscoverPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser('/app/discover');
+  const { t } = await getI18n();
   const params = await searchParams;
   const one = (k: string): string | undefined => (Array.isArray(params[k]) ? params[k][0] : params[k]) as string | undefined;
 
@@ -69,9 +71,9 @@ export default async function DiscoverPage({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Discover</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{t('discover.title')}</h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Search across tracked sources. Filters refine what the database returns.
+          {t('discover.subtitle')}
         </p>
       </div>
 
@@ -83,7 +85,7 @@ export default async function DiscoverPage({
               type="search"
               name="q"
               defaultValue={q}
-              placeholder="Search titles, descriptions, attributes…"
+              placeholder={t('discover.searchPlaceholder')}
               aria-label="Search opportunities"
               className="focus-ring h-10 min-w-52 flex-1 rounded-lg border border-[var(--border)] bg-[var(--color-surface-subtle)] px-3.5 text-sm placeholder:text-[var(--text-subtle)]"
             />

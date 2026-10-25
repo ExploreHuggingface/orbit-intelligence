@@ -9,8 +9,9 @@ import { Stepper } from '@/components/easyui/stepper';
 import { Button } from '@/components/easyui/Button';
 import { MonitorForm } from '@/components/app/monitors/monitor-form';
 import { completeOnboardingAction } from '@/lib/actions/app';
-import { CATEGORIES, CATEGORY_LABELS, type Category } from '@/lib/types';
+import { CATEGORIES, type Category } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const INTEREST_ICONS: Record<Category, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
   real_estate: Building2,
@@ -43,12 +44,13 @@ export function OnboardingFlow({
     initialInterests.filter((i): i is Category => (CATEGORIES as readonly string[]).includes(i))
   );
   const [monitorCreated, setMonitorCreated] = React.useState(false);
+  const { t } = useI18n();
   const [primary, setPrimary] = React.useState<Category>('real_estate');
 
   const steps = [
-    { title: 'Your interests', description: 'What are you hunting for?' },
-    { title: 'First monitor', description: 'Set ORBIT watching for you' },
-    { title: 'Done', description: 'Your workspace is ready' },
+    { title: t('onboarding.stepInterests'), description: t('onboarding.stepInterestsDesc') },
+    { title: t('onboarding.stepMonitor'), description: t('onboarding.stepMonitorDesc') },
+    { title: t('onboarding.stepDone'), description: t('onboarding.stepDoneDesc') },
   ];
 
   const toggleInterest = (c: Category) => {
@@ -60,10 +62,10 @@ export function OnboardingFlow({
     <div className="mx-auto max-w-2xl space-y-8">
       <div className="text-center">
         <h1 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-          Welcome to ORBIT
+          {t('onboarding.title')}
         </h1>
         <p className="mt-1 text-sm text-[var(--text-muted)]">
-          Two quick steps and your workspace is watching sources for you.
+          {t('onboarding.subtitle')}
         </p>
       </div>
 
@@ -72,10 +74,10 @@ export function OnboardingFlow({
       {step === 0 && (
         <section aria-labelledby="step-interests" className="space-y-4">
           <h2 id="step-interests" className="text-lg font-semibold">
-            What are you looking for?
+            {t('onboarding.interestsTitle')}
           </h2>
           <p className="text-sm text-[var(--text-muted)]">
-            Pick one or more categories — we&apos;ll prefill your first monitor accordingly.
+            {t('onboarding.interestsHint')}
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {CATEGORIES.map((c) => {
@@ -103,7 +105,7 @@ export function OnboardingFlow({
                     <Icon className="size-4.5" strokeWidth={1.75} />
                   </span>
                   <span className="flex-1 text-sm font-medium text-[var(--text-primary)]">
-                    {CATEGORY_LABELS[c]}
+                    {t(`category.${c}` as never)}
                   </span>
                   {active && <Check className="size-4 text-[color:var(--color-brand)]" aria-hidden />}
                 </button>
@@ -119,7 +121,7 @@ export function OnboardingFlow({
                 setStep(1);
               }}
             >
-              Continue
+              {t('common.continue')}
             </Button>
           </div>
         </section>
@@ -128,10 +130,10 @@ export function OnboardingFlow({
       {step === 1 && (
         <section aria-labelledby="step-monitor" className="space-y-4">
           <h2 id="step-monitor" className="text-lg font-semibold">
-            Create your first monitor
+            {t('onboarding.monitorTitle')}
           </h2>
           <p className="text-sm text-[var(--text-muted)]">
-            Prefilled for {CATEGORY_LABELS[primary]} — edit anything before saving.
+            {t('onboarding.monitorHint', { category: t(`category.${primary}` as never) })}
           </p>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
             <MonitorForm
@@ -148,7 +150,7 @@ export function OnboardingFlow({
           </div>
           <div className="flex justify-between">
             <Button variant="secondary" size="md" onClick={() => setStep(0)}>
-              Back
+              {t('common.back')}
             </Button>
             <Button
               variant="ghost"
@@ -158,7 +160,7 @@ export function OnboardingFlow({
                 setStep(2);
               }}
             >
-              Skip for now
+              {t('onboarding.skipForNow')}
             </Button>
           </div>
         </section>
@@ -170,12 +172,10 @@ export function OnboardingFlow({
             <Check className="size-6" strokeWidth={2} aria-hidden />
           </span>
           <h2 id="step-done" className="text-lg font-semibold">
-            {monitorCreated ? 'Your first monitor is live' : 'Your workspace is ready'}
+            {monitorCreated ? t('onboarding.doneTitleLive') : t('onboarding.doneTitleReady')}
           </h2>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-[var(--text-muted)]">
-            {monitorCreated
-              ? 'ORBIT will check your sources and notify you about matching opportunities. Background crawling activates when the production backend is connected — until then, your workspace runs on sample data.'
-              : 'You can create monitors any time from the Monitors page. Your workspace starts with sample data so every page has content.'}
+            {monitorCreated ? t('onboarding.doneBodyLive') : t('onboarding.doneBodyReady')}
           </p>
           <Button
             size="lg"
@@ -184,7 +184,7 @@ export function OnboardingFlow({
               router.push('/app/overview');
             }}
           >
-            Go to dashboard
+            {t('onboarding.goToDashboard')}
           </Button>
         </section>
       )}

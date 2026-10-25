@@ -4,17 +4,23 @@ import * as React from 'react';
 import Link from 'next/link';
 import { CircleAlert } from 'lucide-react';
 import { signUpAction, type ActionState } from '@/lib/actions/auth';
+import { useI18n } from '@/lib/i18n/context';
+import { LanguageSelector } from '@/components/ui/language-selector';
 import { Field, FormAlert, PasswordInput, SubmitButton, inputClass } from '@/components/auth/form-parts';
 
 export function SignupForm() {
   const [state, formAction, pending] = React.useActionState<ActionState, FormData>(signUpAction, {});
   const [accepted, setAccepted] = React.useState(false);
+  const { t } = useI18n();
 
   return (
     <div>
-      <h1 className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">Create your workspace</h1>
+      <div className="mb-6 flex justify-end">
+        <LanguageSelector variant="light" />
+      </div>
+      <h1 className="text-xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{t('auth.createWorkspace')}</h1>
       <p className="mt-1 text-sm text-[var(--text-muted)]">
-        3 monitors free. No credit card required.
+        {t('auth.signUpSubtitle')}
       </p>
 
       <form action={formAction} className="mt-6 space-y-4" noValidate>
@@ -24,7 +30,7 @@ export function SignupForm() {
             <span>{state.error}</span>
           </FormAlert>
         )}
-        <Field label="Full name" htmlFor="full_name" error={state.fieldErrors?.full_name}>
+        <Field label={t('auth.fullName')} htmlFor="full_name" error={state.fieldErrors?.full_name}>
           <input
             id="full_name"
             name="full_name"
@@ -35,7 +41,7 @@ export function SignupForm() {
             className={inputClass}
           />
         </Field>
-        <Field label="Email" htmlFor="email" error={state.fieldErrors?.email}>
+        <Field label={t('auth.email')} htmlFor="email" error={state.fieldErrors?.email}>
           <input
             id="email"
             name="email"
@@ -47,10 +53,10 @@ export function SignupForm() {
           />
         </Field>
         <Field
-          label="Password"
+          label={t('auth.password')}
           htmlFor="password"
           error={state.fieldErrors?.password}
-          hint="At least 8 characters."
+          hint={t('auth.passwordHint')}
         >
           <PasswordInput id="password" name="password" autoComplete="new-password" placeholder="Create a password" />
         </Field>
@@ -66,11 +72,11 @@ export function SignupForm() {
             <span>
               I accept the{' '}
               <Link href="/terms" className="text-[color:var(--color-brand)] hover:underline">
-                Terms of Service
+                {t('auth.terms')}
               </Link>{' '}
               and{' '}
               <Link href="/privacy" className="text-[color:var(--color-brand)] hover:underline">
-                Privacy Policy
+                {t('auth.privacy')}
               </Link>
               .
             </span>
@@ -81,15 +87,15 @@ export function SignupForm() {
             </p>
           )}
         </div>
-        <SubmitButton pending={pending} pendingLabel="Creating workspace…">
-          Start free
+        <SubmitButton pending={pending} pendingLabel={t('auth.creatingWorkspace')}>
+          {t('auth.startFreeCta')}
         </SubmitButton>
       </form>
 
       <p className="mt-6 text-center text-[13px] text-[var(--text-muted)]">
-        Already have an account?{' '}
+        {t('auth.haveAccount')}{' '}
         <Link href="/login" className="font-medium text-[color:var(--color-brand)] hover:underline">
-          Sign in
+          {t('common.signIn')}
         </Link>
       </p>
     </div>

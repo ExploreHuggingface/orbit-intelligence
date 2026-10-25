@@ -15,8 +15,9 @@ import { Modal, ConfirmButtons } from '@/components/ui/modal';
 import { MonitorForm } from '@/components/app/monitors/monitor-form';
 import { deleteMonitorAction, restoreMonitorAction, setMonitorStatusAction } from '@/lib/actions/app';
 import { toastError, toastSuccess } from '@/components/ui/toast-helpers';
-import { CATEGORY_LABELS, type Monitor } from '@/lib/types';
+import { type Monitor } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 function frequencyLabel(minutes: number): string {
   if (minutes >= 1440) return 'Daily';
@@ -43,6 +44,7 @@ export function MonitorsTable({
   const [confirmDelete, setConfirmDelete] = React.useState<Monitor | null>(null);
   const [deleting, setDeleting] = React.useState(false);
   const [editing, setEditing] = React.useState<Monitor | null>(null);
+  const { t } = useI18n();
 
   const openWizard = searchParams.get('new') === '1';
   const prefillCategory = searchParams.get('category') ?? undefined;
@@ -132,19 +134,19 @@ export function MonitorsTable({
   const columns: Column<Monitor>[] = [
     {
       key: 'name',
-      header: 'Monitor',
+      header: t('nav.monitors'),
       sortable: true,
       sortValue: (m) => m.name,
       cell: (m) => (
         <div className="min-w-0">
           <p className="truncate font-medium text-[var(--text-primary)]">{m.name}</p>
-          <p className="truncate text-[11px] text-[var(--text-muted)]">{CATEGORY_LABELS[m.category]}</p>
+          <p className="truncate text-[11px] text-[var(--text-muted)]">{t(`category.${m.category}` as never)}</p>
         </div>
       ),
     },
     {
       key: 'matches',
-      header: 'Matches',
+      header: t('monitors.matches'),
       align: 'right',
       sortable: true,
       sortValue: (m) => m.match_count,
@@ -152,7 +154,7 @@ export function MonitorsTable({
     },
     {
       key: 'checked',
-      header: 'Last checked',
+      header: t('monitors.lastChecked'),
       align: 'right',
       sortable: true,
       sortValue: (m) => m.last_checked_at,
@@ -160,23 +162,23 @@ export function MonitorsTable({
     },
     {
       key: 'frequency',
-      header: 'Refresh',
+      header: t('monitors.refresh'),
       cell: (m) => <span className="text-[var(--text-secondary)]">{frequencyLabel(m.frequency_minutes)}</span>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('monitors.status'),
       cell: (m) => (
-        <OrbitBadge tone={m.status === 'active' ? 'positive' : 'neutral'}>{m.status === 'active' ? 'Active' : 'Paused'}</OrbitBadge>
+        <OrbitBadge tone={m.status === 'active' ? 'positive' : 'neutral'}>{m.status === 'active' ? t('status.active') : t('status.paused')}</OrbitBadge>
       ),
     },
     {
       key: 'notify',
-      header: 'Alerts',
+      header: t('monitors.alerts'),
       cell: (m) => (
         <span className="inline-flex items-center gap-1 text-[var(--text-secondary)]" title={m.notify_in_app ? 'In-app alerts on' : 'Alerts off'}>
           {m.notify_in_app ? <Bell className="size-3.5" aria-hidden /> : <BellOff className="size-3.5" aria-hidden />}
-          {m.digest_mode ? 'Digest' : m.notify_in_app ? 'Instant' : 'Off'}
+          {m.digest_mode ? t('monitors.digest') : m.notify_in_app ? t('monitors.instant') : t('monitors.off')}
         </span>
       ),
     },
@@ -228,13 +230,13 @@ export function MonitorsTable({
               type="search"
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search monitors…"
-              aria-label="Search monitors"
+              placeholder={t('monitors.searchPlaceholder')}
+              aria-label={t('common.search')}
               className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] pl-9 pr-3 text-[13px] placeholder:text-[var(--text-subtle)]"
             />
           </div>
           <p className="tnum text-xs text-[var(--text-muted)]">
-            {activeCount} active / {monitors.length} total · {planName} plan {planMonitorLimit >= 0 ? `(${planMonitorLimit} max)` : '(unlimited)'}
+            {t('monitors.activeOfTotal', { active: activeCount, total: monitors.length, plan: planName, limit: planMonitorLimit >= 0 ? planMonitorLimit : '∞' })}
           </p>
           <Link
             href="/app/monitors?new=1"
@@ -245,12 +247,12 @@ export function MonitorsTable({
               atLimit && 'pointer-events-none opacity-40'
             )}
           >
-            <Plus className="size-4" aria-hidden /> New Monitor
+            <Plus className="size-4" aria-hidden /> {t('nav.newMonitor')}
           </Link>
         </div>
 
         <DataTable
-          ariaLabel="Monitors"
+          ariaLabel={t('nav.monitors')}
           columns={columns}
           rows={filtered}
           isLoading={false}
@@ -267,14 +269,14 @@ export function MonitorsTable({
           emptyState={
             <EmptyState
               icon={Radar}
-              title="No monitors yet"
-              description="A monitor watches sources continuously and scores new matches for you."
+              title={t('monitors.empty')}
+              description={t('monitors.emptyHint')}
               action={
                 <Link
                   href="/app/monitors?new=1"
                   className="focus-ring inline-flex h-9 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3.5 text-[13px] font-medium text-white hover:opacity-90"
                 >
-                  <Plus className="size-4" aria-hidden /> Create your first monitor
+                  <Plus className="size-4" aria-hidden /> {t('monitors.createFirst')}
                 </Link>
               }
             />
@@ -325,7 +327,7 @@ export function MonitorsTable({
       <Modal
         open={confirmDelete !== null}
         onClose={() => setConfirmDelete(null)}
-        title="Delete monitor"
+        title={t('monitors.deleteTitle')}
         description={
           confirmDelete
             ? `This removes “${confirmDelete.name}” from your workspace. You can undo for 5 seconds after deleting.`
@@ -333,7 +335,7 @@ export function MonitorsTable({
         }
         footer={
           <ConfirmButtons
-            confirmLabel="Delete monitor"
+            confirmLabel={t('monitors.deleteConfirm')}
             destructive
             pending={deleting}
             onConfirm={() => void doDelete()}

@@ -10,8 +10,10 @@ import { Sidebar, SidebarTrigger, useSidebar, type SidebarSection } from '@/comp
 import { NAV_SECTIONS, navItemForPath } from '@/components/app/nav';
 import { UsageMeter } from '@/components/app/shell/usage-meter';
 import { useUiStore } from '@/lib/stores/ui-store';
+import { useI18n } from '@/lib/i18n/context';
 import { initialsOf } from '@/lib/utils/format';
 import { signOutAction } from '@/lib/actions/auth';
+import { LanguageSelector } from '@/components/ui/language-selector';
 import { cn } from '@/lib/easyui/utils';
 
 import { OrbitMark } from '@/components/ui/logo';
@@ -34,6 +36,7 @@ function Logo({ collapsed }: { collapsed: boolean }) {
 
 function AvatarMenu({ fullName, email }: { fullName: string; email: string }) {
   const { collapsed } = useSidebar();
+  const { t } = useI18n();
   const [open, setOpen] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
 
@@ -85,7 +88,7 @@ function AvatarMenu({ fullName, email }: { fullName: string; email: string }) {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
           >
-            <UserRound className="size-4" /> Account
+            <UserRound className="size-4" /> {t('nav.account')}
           </Link>
           <Link
             href="/app/settings?tab=workspace"
@@ -93,7 +96,7 @@ function AvatarMenu({ fullName, email }: { fullName: string; email: string }) {
             onClick={() => setOpen(false)}
             className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
           >
-            <Settings className="size-4" /> Preferences
+            <Settings className="size-4" /> {t('nav.preferences')}
           </Link>
           <button
             type="button"
@@ -101,7 +104,7 @@ function AvatarMenu({ fullName, email }: { fullName: string; email: string }) {
             onClick={() => void signOutAction()}
             className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
           >
-            <LogOut className="size-4" /> Sign out
+            <LogOut className="size-4" /> {t('common.signOut')}
           </button>
         </div>
       )}
@@ -125,17 +128,23 @@ export function AppSidebar({
   email: string;
 }) {
   const pathname = usePathname();
+  const { t } = useI18n();
   const collapsed = useUiStore((s) => s.sidebarCollapsed);
   const setCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   const mobileOpen = useUiStore((s) => s.mobileSidebarOpen);
   const setMobileOpen = useUiStore((s) => s.setMobileSidebarOpen);
   const active = navItemForPath(pathname);
 
+  const sectionTitles: Record<string, string> = {
+    Workspace: t('nav.workspace'),
+    Intelligence: t('nav.intelligence'),
+    Management: t('nav.management'),
+  };
   const sections: SidebarSection[] = NAV_SECTIONS.map((section) => ({
-    title: section.title,
+    title: sectionTitles[section.title] ?? section.title,
     items: section.items.map((item) => ({
       id: item.id,
-      label: item.label,
+      label: t(item.key),
       icon: <item.icon strokeWidth={1.75} />,
       badge:
         item.id === 'notifications' && unreadCount > 0
@@ -177,7 +186,7 @@ export function AppSidebar({
             )}
           >
             <Settings className="size-[18px]" strokeWidth={1.75} />
-            {!collapsed && 'Settings'}
+            {!collapsed && t('nav.settings')}
           </Link>
           <Link
             href="/contact"
@@ -188,9 +197,10 @@ export function AppSidebar({
             )}
           >
             <LifeBuoy className="size-[18px]" strokeWidth={1.75} />
-            {!collapsed && 'Help'}
+            {!collapsed && t('nav.help')}
           </Link>
           <AvatarMenu fullName={fullName} email={email} />
+          <LanguageSelector />
         </div>
       }
     />

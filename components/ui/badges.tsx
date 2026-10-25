@@ -1,3 +1,5 @@
+'use client';
+
 /* Status + meta badges. Semantic color at 10% background + full-strength text,
    always with icon/text — never color-dot-only (plan §15). */
 import * as React from 'react';
@@ -12,7 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { OpportunityStatus } from '@/lib/types';
-import { STATUS_LABELS } from '@/lib/types';
+import { useI18n } from '@/lib/i18n/context';
 
 const TONES = {
   neutral: 'bg-neutral-100 text-neutral-700',
@@ -56,26 +58,29 @@ const STATUS_META: Record<OpportunityStatus, { tone: BadgeTone; Icon: LucideIcon
 };
 
 export function StatusBadge({ status, className }: { status: OpportunityStatus; className?: string }) {
+  const { t } = useI18n();
   const { tone, Icon } = STATUS_META[status];
   return (
     <OrbitBadge tone={tone} className={className}>
       <Icon className="size-3" strokeWidth={2} aria-hidden />
-      {STATUS_LABELS[status]}
+      {t(`status.${status}` as never)}
     </OrbitBadge>
   );
 }
 
 /** Required honesty badge on every seeded record (plan rule 6). */
 export function SampleBadge({ className }: { className?: string }) {
+  const { t } = useI18n();
   return (
     <OrbitBadge tone="neutral" className={cn('border border-[var(--border)] bg-transparent', className)}>
-      Sample data
+      {t('label.sampleData')}
     </OrbitBadge>
   );
 }
 
 /** "Illustrative estimate" disclaimer tag. */
 export function EstimateTag({ className }: { className?: string }) {
+  const { t } = useI18n();
   return (
     <span
       className={cn(
@@ -88,7 +93,7 @@ export function EstimateTag({ className }: { className?: string }) {
         <path d="M6 5.4v3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
         <circle cx="6" cy="3.6" r="0.7" fill="currentColor" />
       </svg>
-      Illustrative estimate
+      {t('label.illustrativeEstimate')}
     </span>
   );
 }

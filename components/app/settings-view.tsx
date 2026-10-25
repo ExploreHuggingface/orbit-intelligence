@@ -13,13 +13,15 @@ import { updateProfileAction, resetDemoDataAction } from '@/lib/actions/app';
 import { toastSuccess, toastError } from '@/components/ui/toast-helpers';
 import type { Plan, Profile } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
+import { LanguageSelector } from '@/components/ui/language-selector';
 
 const TABS = [
-  { id: 'profile', label: 'Profile', Icon: UserRound },
-  { id: 'workspace', label: 'Workspace', Icon: Settings2 },
-  { id: 'notifications', label: 'Notifications', Icon: Bell },
-  { id: 'data', label: 'Data', Icon: Database },
-  { id: 'plan', label: 'Plan', Icon: CreditCard },
+  { id: 'profile', label: 'settings.tab.profile', Icon: UserRound },
+  { id: 'workspace', label: 'settings.tab.workspace', Icon: Settings2 },
+  { id: 'notifications', label: 'settings.tab.notifications', Icon: Bell },
+  { id: 'data', label: 'settings.tab.data', Icon: Database },
+  { id: 'plan', label: 'settings.tab.plan', Icon: CreditCard },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
@@ -59,6 +61,8 @@ export function SettingsView({
   const [resetOpen, setResetOpen] = React.useState(false);
   const [resetting, setResetting] = React.useState(false);
   const [upgradeOpen, setUpgradeOpen] = React.useState(false);
+  const { t: tt } = useI18n();
+  const t = tt;
 
   const setTab = (id: TabId) => router.push(`/app/settings?tab=${id}`, { scroll: false });
 
@@ -70,7 +74,7 @@ export function SettingsView({
     const res = await updateProfileAction(null, fd);
     setSavingProfile(false);
     if (!res.ok) { toastError(res.error ?? 'Could not save'); return; }
-    toastSuccess('Profile saved');
+    toastSuccess(t('settings.profileSaved'));
     router.refresh();
   };
 
@@ -98,7 +102,7 @@ export function SettingsView({
             )}
           >
             <t.Icon className="size-3.5" aria-hidden />
-            {t.label}
+            {tt(t.label as never)}
           </button>
         ))}
       </div>
@@ -106,11 +110,11 @@ export function SettingsView({
       {tab === 'profile' && (
         <Card>
           <CardHeader>
-            <CardTitle>Profile</CardTitle>
+            <CardTitle>{t('settings.tab.profile')}</CardTitle>
           </CardHeader>
           <CardContent className="max-w-lg space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="s-name" className="block text-[13px] font-medium">Full name</label>
+              <label htmlFor="s-name" className="block text-[13px] font-medium">{t('settings.fullName')}</label>
               <input
                 id="s-name"
                 type="text"
@@ -120,7 +124,7 @@ export function SettingsView({
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="s-email" className="block text-[13px] font-medium">Email</label>
+              <label htmlFor="s-email" className="block text-[13px] font-medium">{t('settings.email')}</label>
               <input
                 id="s-email"
                 type="email"
@@ -129,10 +133,10 @@ export function SettingsView({
                 aria-readonly
                 className="h-10 w-full cursor-default rounded-lg border border-[var(--border)] bg-[var(--color-surface-subtle)] px-3.5 text-sm text-[var(--text-muted)]"
               />
-              <p className="text-[11px] text-[var(--text-muted)]">Email changes go live with billing at launch.</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{t('settings.emailNote')}</p>
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="s-tz" className="block text-[13px] font-medium">Timezone</label>
+              <label htmlFor="s-tz" className="block text-[13px] font-medium">{t('settings.timezone')}</label>
               <select
                 id="s-tz"
                 value={timezone}
@@ -151,7 +155,7 @@ export function SettingsView({
               className="focus-ring inline-flex h-10 items-center gap-2 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {savingProfile && <span className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden />}
-              Save profile
+              {t('settings.saveProfile')}
             </button>
           </CardContent>
         </Card>
@@ -160,12 +164,12 @@ export function SettingsView({
       {tab === 'workspace' && (
         <Card>
           <CardHeader>
-            <CardTitle>Workspace defaults</CardTitle>
+            <CardTitle>{t('settings.tab.workspace')}</CardTitle>
           </CardHeader>
           <CardContent className="max-w-lg space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label htmlFor="s-cat" className="block text-[13px] font-medium">Default category</label>
+                <label htmlFor="s-cat" className="block text-[13px] font-medium">{t('settings.defaultCategory')}</label>
                 <select id="s-cat" value={defaultCategory} onChange={(e) => setDefaultCategory(e.target.value)} className="focus-ring h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">
                   <option value="real_estate">Real Estate</option>
                   <option value="watches">Watches</option>
@@ -175,7 +179,7 @@ export function SettingsView({
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="s-cur" className="block text-[13px] font-medium">Currency</label>
+                <label htmlFor="s-cur" className="block text-[13px] font-medium">{t('settings.currency')}</label>
                 <select id="s-cur" value={currency} onChange={(e) => setCurrency(e.target.value)} className="focus-ring h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">
                   <option value="EUR">EUR (€)</option>
                   <option value="USD">USD ($)</option>
@@ -183,7 +187,11 @@ export function SettingsView({
               </div>
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="s-page" className="block text-[13px] font-medium">Items per page</label>
+              <label className="block text-[13px] font-medium">{t('common.language')}</label>
+              <LanguageSelector variant="dark" />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="s-page" className="block text-[13px] font-medium">{t('settings.itemsPerPage')}</label>
               <select id="s-page" value={perPage} onChange={(e) => setPerPage(e.target.value)} className="focus-ring h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm">
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -192,20 +200,20 @@ export function SettingsView({
             </div>
             <div className="flex items-center justify-between rounded-lg border border-[var(--border)] px-4 py-3">
               <div>
-                <p className="text-[13px] font-medium">Theme</p>
-                <p className="text-[11px] text-[var(--text-muted)]">Light is the only theme today.</p>
+                <p className="text-[13px] font-medium">{t('settings.theme')}</p>
+                <p className="text-[11px] text-[var(--text-muted)]">{t('settings.themeLightOnly')}</p>
               </div>
               <span className="inline-flex items-center gap-2 text-[13px] text-[var(--text-secondary)]">
                 Light
-                <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] uppercase text-[var(--text-muted)]">Dark — coming later</span>
+                <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] uppercase text-[var(--text-muted)]">{t('settings.themeDark')}</span>
               </span>
             </div>
             <button
               type="button"
-              onClick={() => toastSuccess('Workspace defaults saved', 'Defaults apply to new searches and lists.')}
+              onClick={() => toastSuccess(t('settings.workspaceSaved'), t('settings.workspaceSavedDesc'))}
               className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-white hover:opacity-90"
             >
-              <Check className="size-4" aria-hidden /> Save workspace
+              <Check className="size-4" aria-hidden /> {t('settings.saveWorkspace')}
             </button>
           </CardContent>
         </Card>
@@ -214,14 +222,14 @@ export function SettingsView({
       {tab === 'notifications' && (
         <Card>
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
+            <CardTitle>{t('settings.tab.notifications')}</CardTitle>
           </CardHeader>
           <CardContent className="max-w-lg space-y-3">
             {[
-              { label: 'In-app notifications', desc: 'Alerts inside ORBIT the moment a match appears', value: notifInApp, set: setNotifInApp, disabled: false },
-              { label: 'Email notifications', desc: 'Email requires account verification — going live at launch', value: false, set: () => undefined, disabled: true },
-              { label: 'Weekly digest', desc: 'A Monday summary of everything your monitors found', value: notifDigest, set: setNotifDigest, disabled: false },
-              { label: 'Price-drop alerts', desc: 'Immediate alert when a tracked item gets cheaper', value: notifPriceDrop, set: setNotifPriceDrop, disabled: false },
+              { label: t('settings.notifInApp'), desc: t('settings.notifInAppDesc'), value: notifInApp, set: setNotifInApp, disabled: false },
+              { label: t('settings.notifEmail'), desc: t('settings.notifEmailDesc'), value: false, set: () => undefined, disabled: true },
+              { label: t('settings.notifDigest'), desc: t('settings.notifDigestDesc'), value: notifDigest, set: setNotifDigest, disabled: false },
+              { label: t('settings.notifPriceDrop'), desc: t('settings.notifPriceDropDesc'), value: notifPriceDrop, set: setNotifPriceDrop, disabled: false },
             ].map((row) => (
               <div
                 key={row.label}
@@ -234,7 +242,7 @@ export function SettingsView({
                   <p className="text-[13px] font-medium">
                     {row.label}
                     {row.disabled && (
-                      <span className="ml-1.5 rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[10px] uppercase text-[var(--text-muted)]">Coming soon</span>
+                      <span className="ml-1.5 rounded-full border border-[var(--border)] px-1.5 py-0.5 text-[10px] uppercase text-[var(--text-muted)]">{t('label.comingSoon')}</span>
                     )}
                   </p>
                   <p className="text-[11px] text-[var(--text-muted)]">{row.desc}</p>
@@ -244,10 +252,10 @@ export function SettingsView({
             ))}
             <button
               type="button"
-              onClick={() => toastSuccess('Notification preferences saved')}
+              onClick={() => toastSuccess(t('settings.notifSaved'))}
               className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-white hover:opacity-90"
             >
-              <Check className="size-4" aria-hidden /> Save preferences
+              <Check className="size-4" aria-hidden /> {t('settings.saveProfile')}
             </button>
           </CardContent>
         </Card>
@@ -256,11 +264,11 @@ export function SettingsView({
       {tab === 'data' && (
         <Card>
           <CardHeader>
-            <CardTitle>Data</CardTitle>
+            <CardTitle>{t('settings.tab.data')}</CardTitle>
           </CardHeader>
           <CardContent className="max-w-lg space-y-4">
             <p className="text-[13px] leading-relaxed text-[var(--text-secondary)]">
-              Your workspace runs on {storageMode === 'local' ? 'a local SQLite database' : 'Supabase Postgres'}.
+              {t('settings.dataIntro', { mode: storageMode === 'local' ? t('settings.modeLocal') : t('settings.modeSupabase') })}
               Export everything ORBIT knows about your account, or reset the demo content to its original state.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -269,14 +277,14 @@ export function SettingsView({
                 download="orbit-export.json"
                 className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
-                <Download className="size-4" aria-hidden /> Export my data (JSON)
+                <Download className="size-4" aria-hidden /> {t('settings.exportData')}
               </a>
               <button
                 type="button"
                 onClick={() => setResetOpen(true)}
                 className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg border border-[color:var(--color-negative)]/40 px-4 text-sm font-medium text-[color:var(--color-negative)] hover:bg-[#F044380D]"
               >
-                <RotateCcw className="size-4" aria-hidden /> Reset demo data
+                <RotateCcw className="size-4" aria-hidden /> {t('settings.resetDemo')}
               </button>
             </div>
           </CardContent>
@@ -287,7 +295,7 @@ export function SettingsView({
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Current plan</CardTitle>
+              <CardTitle>{t('settings.currentPlan')}</CardTitle>
               <OrbitPlanBadge planCode={plan.code} />
             </CardHeader>
             <CardContent className="space-y-4">
@@ -308,18 +316,17 @@ export function SettingsView({
                 onClick={() => setUpgradeOpen(true)}
                 className="focus-ring inline-flex h-10 items-center rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-white hover:opacity-90"
               >
-                Manage plan
+                {t('settings.managePlan')}
               </button>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>How billing works here</CardTitle>
+              <CardTitle>{t('settings.howBillingWorks')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
               <p>
-                This build ships seeded subscriptions — billing goes live at launch. The Manage-plan dialog collects
-                waitlist signups instead of payment details. Nothing is charged, ever, in this build.
+                {t('settings.billingBody')}
               </p>
               <p className="rounded-lg border border-[var(--border)] bg-[var(--color-surface-subtle)] p-3 text-[12px] text-[var(--text-muted)]">
                 Plans: Free (3 monitors, daily refresh) · Pro €99/mo (20 monitors, 30-min refresh) · Scale €249/mo
@@ -334,11 +341,11 @@ export function SettingsView({
       <Modal
         open={resetOpen}
         onClose={() => setResetOpen(false)}
-        title="Reset demo data"
-        description="Your monitors, notifications, activity, collections and searches return to their original demo state. This cannot be undone."
+        title={t('settings.resetTitle')}
+        description={t('settings.resetDesc')}
         footer={
           <ConfirmButtons
-            confirmLabel="Reset demo data"
+            confirmLabel={t('settings.resetConfirm')}
             destructive
             pending={resetting}
             onConfirm={() => {
@@ -347,7 +354,7 @@ export function SettingsView({
                 setResetting(false);
                 setResetOpen(false);
                 if (res.ok) {
-                  toastSuccess('Demo data reset', 'Your workspace is back to its original state.');
+                  toastSuccess(t('settings.resetToast'), t('settings.resetToastDesc'));
                   router.refresh();
                 } else {
                   toastError(res.error ?? 'Reset failed');
@@ -382,6 +389,7 @@ function OrbitPlanBadge({ planCode }: { planCode: Plan['code'] }) {
 }
 
 function UpgradeModal({ open, onClose, currentPlan }: { open: boolean; onClose: () => void; currentPlan: string }) {
+  const { t } = useI18n();
   const [email, setEmail] = React.useState('');
   const [done, setDone] = React.useState(false);
   const [pending, setPending] = React.useState(false);
@@ -390,7 +398,7 @@ function UpgradeModal({ open, onClose, currentPlan }: { open: boolean; onClose: 
     <Modal
       open={open}
       onClose={() => { onClose(); setDone(false); }}
-      title={done ? 'You’re on the waitlist' : 'Billing goes live at launch'}
+      title={done ? t('m.pricing.waitlistDone') : t('m.pricing.billingTitle')}
       description={
         done
           ? undefined
@@ -432,7 +440,7 @@ function UpgradeModal({ open, onClose, currentPlan }: { open: boolean; onClose: 
             disabled={pending}
             className="focus-ring inline-flex h-10 w-full items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
-            {pending ? 'Joining…' : 'Join billing waitlist'}
+            {pending ? t('common.loading') : t('m.pricing.joinWaitlist')}
           </button>
           <p className="text-[11px] text-[var(--text-muted)]">
             Pro €99/mo · Scale €249/mo. Never a fake payment form — checkout arrives with launch.

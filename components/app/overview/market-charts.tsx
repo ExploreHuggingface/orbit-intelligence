@@ -10,7 +10,6 @@ import { BarChart, type BarDatum, type BarSeries } from '@/components/easyui/Bar
 import { Card, CardContent, CardHeader, CardTitle, CardSubtitle } from '@/components/ui/card';
 import { ScoreBar } from '@/components/ui/score-bar';
 import {
-  CATEGORY_LABELS,
   type CategoryPriceDrop,
   type DealScoreDistribution,
   type DiscoveriesPoint,
@@ -18,11 +17,12 @@ import {
 } from '@/lib/types';
 import { formatMoney, formatNumber } from '@/lib/utils/format';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const RANGES = [
-  { days: 7, label: '7d' },
-  { days: 30, label: '30d' },
-  { days: 90, label: '90d' },
+  { days: 7, label: 't:overview.range7' },
+  { days: 30, label: 't:overview.range30' },
+  { days: 90, label: 't:overview.range90' },
 ];
 
 export function MarketCharts({
@@ -42,6 +42,7 @@ export function MarketCharts({
   marketVsListing: MarketVsListing[];
   onRangeChange: (days: number) => void;
 }) {
+  const { t } = useI18n();
   const areaData: AreaChartData = {
     Discoveries: discoveries.map((d) => ({
       date: new Date(d.date + 'T00:00:00Z').getTime(),
@@ -50,7 +51,7 @@ export function MarketCharts({
   };
 
   const dropData: BarDatum[] = priceDrops.map((d) => ({
-    label: CATEGORY_LABELS[d.category],
+    label: String(t(`category.${d.category}` as never)),
     drops: d.drops,
   }));
 
@@ -64,7 +65,7 @@ export function MarketCharts({
     { key: 'market', label: 'Avg reference', color: 'var(--color-info)' },
   ];
   const mvData: BarDatum[] = marketVsListing.map((m) => ({
-    label: CATEGORY_LABELS[m.category],
+    label: String(t(`category.${m.category}` as never)),
     listing: m.avg_listing,
     market: m.avg_market,
   }));
@@ -73,8 +74,8 @@ export function MarketCharts({
     <Card>
       <CardHeader>
         <div>
-          <CardTitle>Market Intelligence</CardTitle>
-          <CardSubtitle>Computed from tracked opportunities in your workspace</CardSubtitle>
+          <CardTitle>{t('overview.marketTitle')}</CardTitle>
+          <CardSubtitle>{t('overview.marketSubtitle')}</CardSubtitle>
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-[var(--border)] p-0.5" role="group" aria-label="Date range">
           {RANGES.map((r) => (
@@ -90,19 +91,19 @@ export function MarketCharts({
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               )}
             >
-              {r.label}
+              {r.label.startsWith('t:') ? t(r.label.slice(2) as never) : r.label}
             </button>
           ))}
         </div>
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-[var(--text-secondary)]">Discoveries over time</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)]">{t('overview.discoveriesOverTime')}</p>
           <InteractiveAreaChart data={areaData} height={200} title="Discoveries" />
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-[var(--text-secondary)]">Price drops by category</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)]">{t('overview.priceDropsByCategory')}</p>
           {dropData.length > 0 ? (
             <BarChart
               data={dropData}
@@ -111,7 +112,7 @@ export function MarketCharts({
               height={200}
               formatValue={(n) => `${formatNumber(n)} drops`}
               formatTick={(n) => String(n)}
-              ariaLabel="Price drops by category"
+              ariaLabel={t('overview.priceDropsByCategory')}
             />
           ) : (
             <p className="rounded-lg border border-dashed border-[var(--border)] p-6 text-center text-xs text-[var(--text-muted)]">
@@ -121,11 +122,11 @@ export function MarketCharts({
         </div>
 
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-[var(--text-secondary)]">Deal score distribution</p>
+          <p className="text-xs font-medium text-[var(--text-secondary)]">{t('overview.dealScoreDistribution')}</p>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="shrink-0 text-center">
               <p className="tnum text-3xl font-semibold tracking-[-0.02em] text-[var(--text-primary)]">{avgDealScore}</p>
-              <p className="text-[11px] text-[var(--text-muted)]">avg deal score</p>
+              <p className="text-[11px] text-[var(--text-muted)]">{t('overview.avgDealScore')}</p>
               <ScoreBar score={avgDealScore} className="mt-1.5 justify-center" />
             </div>
             <div className="min-w-0 flex-1">
@@ -137,7 +138,7 @@ export function MarketCharts({
                   height={150}
                   formatValue={(n) => `${n} opportunities`}
                   formatTick={(n) => String(n)}
-                  ariaLabel="Deal score distribution"
+                  ariaLabel={t('overview.dealScoreDistribution')}
                 />
               )}
             </div>
@@ -146,8 +147,8 @@ export function MarketCharts({
 
         <div className="space-y-1.5">
           <p className="text-xs font-medium text-[var(--text-secondary)]">
-            Market vs listing price
-            <span className="ml-1.5 font-normal text-[var(--text-subtle)]">· illustrative estimates</span>
+            {t('overview.marketVsListing')}
+            <span className="ml-1.5 font-normal text-[var(--text-subtle)]">· {t('label.illustrativeEstimate')}</span>
           </p>
           <BarChart
             data={mvData}
@@ -157,13 +158,13 @@ export function MarketCharts({
             formatValue={(n) => formatMoney(n, { compact: true })}
             formatTick={(n) => formatMoney(n, { compact: true })}
             showLegend
-            ariaLabel="Average listing price versus estimated market value by category"
+            ariaLabel={t('overview.marketVsListing')}
           />
         </div>
       </CardContent>
       <div className="border-t border-[var(--border-subtle)] px-5 py-2.5">
         <Link href="/app/market-insights" className="text-xs font-medium text-[color:var(--color-brand)] hover:underline">
-          Open Market Insights →
+          {t('overview.openInsights')} →
         </Link>
       </div>
     </Card>

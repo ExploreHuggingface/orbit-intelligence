@@ -1,6 +1,9 @@
+'use client';
+
 /* Usage meter card — shared between sidebar footer and settings plan tab (plan §24/VII). */
 import Link from 'next/link';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 export function UsageMeter({
   used,
@@ -15,6 +18,7 @@ export function UsageMeter({
   collapsed?: boolean;
   variant?: 'sidebar' | 'settings';
 }) {
+  const { t } = useI18n();
   const unlimited = limit < 0;
   const pct = unlimited ? 18 : Math.min(100, Math.round((used / limit) * 100));
   const nearLimit = !unlimited && pct >= 80;
@@ -36,7 +40,7 @@ export function UsageMeter({
           <div className="flex items-center justify-between text-[11px] font-medium">
             <span className="text-[var(--text-secondary)]">{planName} plan</span>
             <span className={cn('tnum', nearLimit ? 'text-[color:var(--color-warning)]' : 'text-[var(--text-muted)]')}>
-              {used} / {unlimited ? '∞' : limit} monitors
+              {used} / {unlimited ? '∞' : limit} {t('settings.monitorsLabel')}
             </span>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-raised)]">
@@ -50,7 +54,7 @@ export function UsageMeter({
               aria-valuenow={used}
               aria-valuemin={0}
               aria-valuemax={unlimited ? 100 : limit}
-              aria-label={`Monitors used: ${used} of ${unlimited ? 'unlimited' : limit}`}
+              aria-label={t('settings.monitorsUsed', { used, limit: unlimited ? '∞' : limit })}
             />
           </div>
         </div>

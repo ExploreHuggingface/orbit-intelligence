@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, Bell, Building2, Check, Radar, Scale, Watch, Wrench, LineChart } from 'lucide-react';
 import { ProductPreview } from '@/components/marketing/product-preview';
+import { getI18n } from '@/lib/i18n/server';
 
 export const metadata: Metadata = {
   title: 'ORBIT Intelligence — Your next opportunity is out there',
@@ -104,7 +105,8 @@ const TESTIMONIALS = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { t } = await getI18n();
   return (
     <>
       <script
@@ -139,31 +141,30 @@ export default function LandingPage() {
               <span className="absolute inset-0 animate-ping rounded-full bg-[var(--color-brand)] opacity-60" />
               <span className="relative size-2 rounded-full bg-[var(--color-brand)]" />
             </span>
-            Internet intelligence for operators
+            {t('m.hero.eyebrow')}
           </p>
           <h1 className="mx-auto mt-6 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.03em] text-[var(--color-ink)] sm:text-5xl md:text-6xl">
-            Your next opportunity is out there.
+            {t('m.hero.title')}
           </h1>
           <p className="prose-measure mx-auto mt-5 text-[17px] leading-relaxed text-[var(--color-ink-secondary)] md:text-lg">
-            ORBIT continuously scans marketplaces and the web, scores what matches your criteria, and alerts you
-            before the market does.
+            {t('m.hero.subtitle')}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/signup"
               className="focus-ring inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--color-ink)] px-6 text-[15px] font-medium text-white hover:opacity-90"
             >
-              Start free <ArrowRight className="size-4" aria-hidden />
+              {t('common.startFree')} <ArrowRight className="size-4" aria-hidden />
             </Link>
             <Link
               href="/features"
               className="focus-ring inline-flex h-12 items-center rounded-lg border border-[var(--color-line-strong)] bg-white px-6 text-[15px] font-medium text-[var(--color-ink)] hover:bg-[var(--color-surface-subtle)]"
             >
-              See how it works
+              {t('m.hero.seeHowItWorks')}
             </Link>
           </div>
           <p className="mt-4 text-[13px] text-[var(--color-ink-tertiary)]">
-            No credit card required · 3 monitors free · Cancel anytime
+            {t('auth.trustLine')}
           </p>
 
           <div className="mx-auto mt-14 max-w-4xl">
@@ -257,7 +258,7 @@ export default function LandingPage() {
       {/* How it works */}
       <section aria-labelledby="how-heading" className="mx-auto max-w-[1200px] px-6 py-20 md:py-28">
         <h2 id="how-heading" className="text-center text-3xl font-semibold tracking-[-0.02em] text-[var(--color-ink)]">
-          How it works
+          {t('m.how.title')}
         </h2>
         <ol className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
           {[
@@ -352,7 +353,7 @@ export default function LandingPage() {
             id="cta-heading"
             className="mx-auto max-w-2xl text-3xl font-semibold tracking-[-0.02em] text-[var(--color-ink)] md:text-4xl"
           >
-            Start finding opportunities today.
+            {t('m.finalCta.title')}
           </h2>
           <p className="prose-measure mx-auto mt-4 text-[16px] leading-relaxed text-[var(--color-ink-secondary)]">
             Set up your first monitor in under two minutes. Your workspace starts with sample data so you can see
@@ -363,7 +364,7 @@ export default function LandingPage() {
               href="/signup"
               className="focus-ring inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--color-ink)] px-6 text-[15px] font-medium text-white hover:opacity-90"
             >
-              Start free <ArrowRight className="size-4" aria-hidden />
+              {t('common.startFree')} <ArrowRight className="size-4" aria-hidden />
             </Link>
             <Link
               href="/contact"

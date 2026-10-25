@@ -15,6 +15,7 @@ import type { Category } from '@/lib/types';
 import type { TopMover } from '@/lib/data/analytics';
 import { formatMoney, formatNumber } from '@/lib/utils/format';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 const RANGES = [
   { days: 30, label: '30d' },
@@ -46,6 +47,7 @@ export function MarketInsightsView({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
 
   // Build multi-series area chart data keyed by category label.
   const areaData: AreaChartData = {};
@@ -56,7 +58,7 @@ export function MarketInsightsView({
   const moverColumns: Column<TopMover & { id: string }>[] = [
     {
       key: 'item',
-      header: 'Opportunity',
+      header: t('mi.opportunity'),
       cell: (m) => (
         <Link href={`/app/opportunities?id=${m.id}`} className="focus-ring block max-w-72 truncate rounded font-medium hover:underline">
           {m.title}
@@ -65,19 +67,19 @@ export function MarketInsightsView({
     },
     {
       key: 'was',
-      header: 'Was',
+      header: t('mi.was'),
       align: 'right',
       cell: (m) => <span className="tnum text-[var(--text-muted)] line-through">{formatMoney(m.previous_price)}</span>,
     },
     {
       key: 'now',
-      header: 'Now',
+      header: t('mi.now'),
       align: 'right',
       cell: (m) => <Money value={m.current_price} />,
     },
     {
       key: 'change',
-      header: 'Change',
+      header: t('mi.change'),
       align: 'right',
       cell: (m) => <PriceDelta pct={m.price_change_pct} />,
     },
@@ -147,8 +149,8 @@ export function MarketInsightsView({
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Average price by category</CardTitle>
-              <p className="text-xs text-[var(--text-muted)]">Listing prices, {rangeDays}-day window · illustrative</p>
+              <CardTitle>{t('mi.avgPriceByCategory')}</CardTitle>
+              <p className="text-xs text-[var(--text-muted)]">{t('mi.illustrative', { range: rangeDays })}</p>
             </div>
           </CardHeader>
           <CardContent>
@@ -159,12 +161,12 @@ export function MarketInsightsView({
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Tracked volume by category</CardTitle>
-              <p className="text-xs text-[var(--text-muted)]">Share of opportunities ORBIT watches for you</p>
+              <CardTitle>{t('mi.volumeByCategory')}</CardTitle>
+              <p className="text-xs text-[var(--text-muted)]">{t('mi.volumeSubtitle')}</p>
             </div>
           </CardHeader>
           <CardContent className="grid place-items-center">
-            <DonutChart data={distribution} variant="donut" size={220} centerLabel="tracked" showLegend />
+            <DonutChart data={distribution} variant="donut" size={220} centerLabel={t('mi.tracked')} showLegend />
           </CardContent>
         </Card>
       </div>
@@ -172,12 +174,12 @@ export function MarketInsightsView({
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Top movers — biggest price drops</CardTitle>
-            <p className="text-xs text-[var(--text-muted)]">Largest reductions observed on tracked listings</p>
+            <CardTitle>{t('mi.topMovers')}</CardTitle>
+            <p className="text-xs text-[var(--text-muted)]">{t('mi.topMoversSub')}</p>
           </div>
         </CardHeader>
         <CardContent>
-          <DataTable ariaLabel="Top movers" columns={moverColumns} rows={topMovers} minWidth="40rem" />
+          <DataTable ariaLabel={t('mi.topMovers')} columns={moverColumns} rows={topMovers} minWidth="40rem" />
         </CardContent>
       </Card>
     </div>

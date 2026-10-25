@@ -16,6 +16,7 @@ import { createCollectionAction, deleteCollectionAction, removeFromCollectionAct
 import { toastError, toastSuccess } from '@/components/ui/toast-helpers';
 import type { Collection, Opportunity, PriceHistoryPoint } from '@/lib/types';
 import { cn } from '@/lib/easyui/utils';
+import { useI18n } from '@/lib/i18n/context';
 
 export function CollectionsManager({
   collections,
@@ -37,6 +38,7 @@ export function CollectionsManager({
   const [name, setName] = React.useState('');
   const [pending, setPending] = React.useState(false);
   const [drawerOpp, setDrawerOpp] = React.useState<Opportunity | null>(null);
+  const { t } = useI18n();
   const atLimit = planCollectionLimit >= 0 && collections.length >= planCollectionLimit;
 
   const create = async () => {
@@ -46,7 +48,7 @@ export function CollectionsManager({
     const res = await createCollectionAction(null, fd);
     setPending(false);
     if (!res.ok) { toastError(res.error ?? 'Could not create collection'); return; }
-    toastSuccess(`Collection “${name}” created`);
+    toastSuccess(t('collections.createdToast', { name }));
     setName('');
     setCreating(false);
     router.push(`/app/collections?collection=${res.data?.id}`);
@@ -59,15 +61,15 @@ export function CollectionsManager({
     if (!res.ok) { toastError(res.error ?? 'Failed'); return; }
     router.refresh();
     const { toast } = await import('sonner');
-    toast(`Removed “${opp.title.slice(0, 40)}${opp.title.length > 40 ? '…' : ''}”`, {
+    toast(t('collections.removedToast', { title: opp.title.slice(0, 40) + (opp.title.length > 40 ? '…' : '') }), {
       duration: 5000,
       action: {
-        label: 'Undo',
+        label: t('common.undo'),
         onClick: () => {
           void (async () => {
             const { addToCollectionAction } = await import('@/lib/actions/app');
             const undo = await addToCollectionAction(activeCollection.id, opp.id);
-            if (undo.ok) { toastSuccess('Restored'); router.refresh(); }
+            if (undo.ok) { toastSuccess(t('collections.restoredToast')); router.refresh(); }
           })();
         },
       },
@@ -105,8 +107,8 @@ export function CollectionsManager({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && void create()}
-              placeholder="Collection name"
-              aria-label="New collection name"
+              placeholder={t('collections.namePlaceholder')}
+              aria-label={t('collections.newCollection')}
               autoFocus
               className="focus-ring h-9 w-full rounded-lg border border-[var(--border)] px-2.5 text-[13px]"
             />
@@ -117,13 +119,13 @@ export function CollectionsManager({
                 disabled={pending || name.trim().length < 2}
                 className="focus-ring h-8 flex-1 rounded-lg bg-[var(--accent)] text-xs font-medium text-white disabled:opacity-50"
               >
-                Create
+                {t('common.create')}
               </button>
               <button
                 type="button"
                 onClick={() => { setCreating(false); setName(''); }}
                 className="focus-ring grid size-8 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-muted)]"
-                aria-label="Cancel"
+                aria-label={t('common.cancel')}
               >
                 <X className="size-3.5" />
               </button>
@@ -134,14 +136,14 @@ export function CollectionsManager({
             type="button"
             onClick={() => setCreating(true)}
             disabled={atLimit}
-            title={atLimit ? `${planName} plan allows ${planCollectionLimit} collections. Upgrade for unlimited.` : 'New collection'}
+            title={atLimit ? t('collections.limitToast', { plan: planName, limit: planCollectionLimit }) : t('collections.newCollection')}
             className={cn(
               'focus-ring flex w-full items-center gap-2 rounded-lg border border-dashed border-[var(--border)] px-3.5 py-2.5 text-[13px] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]',
               atLimit && 'cursor-not-allowed opacity-40'
             )}
           >
             <FolderPlus className="size-4" strokeWidth={1.75} aria-hidden />
-            {atLimit ? `Limit reached (${planCollectionLimit})` : 'New Collection'}
+            {atLimit ? t('collections.limitReached', { limit: planCollectionLimit }) : t('collections.newCollection')}
           </button>
         )}
 
@@ -151,13 +153,13 @@ export function CollectionsManager({
             onClick={async () => {
               const res = await deleteCollectionAction(activeCollection.id);
               if (!res.ok) { toastError(res.error ?? 'Failed'); return; }
-              toastSuccess(`Deleted “${activeCollection.name}”`);
+              toastSuccess(t('collections.deletedToast', { name: activeCollection.name }));
               router.push('/app/collections');
               router.refresh();
             }}
             className="focus-ring w-full rounded-lg px-3.5 py-2 text-left text-xs text-[var(--text-muted)] hover:text-[color:var(--color-negative)]"
           >
-            Delete “{activeCollection.name}”…
+            {t('collections.deleteCollection', { name: activeCollection.name })}
           </button>
         )}
       </aside>
@@ -167,24 +169,24 @@ export function CollectionsManager({
         {!activeCollection ? (
           <EmptyState
             icon={FolderOpen}
-            title={collections.length === 0 ? 'No collections yet' : 'Select a collection'}
+            title={collections.length === 0 ? t('collections.noCollections') : t('collections.selectCollection')}
             description={
               collections.length === 0
-                ? 'Collections group opportunities you want to track together.'
-                : 'Pick a collection on the left to see its items.'
+                ? t('collections.noCollectionsHint')
+                : t('collections.selectHint')
             }
           />
         ) : items.length === 0 ? (
           <EmptyState
             icon={Sparkles}
-            title={`“${activeCollection.name}” is empty`}
-            description="Save opportunities here from Discover or the Opportunities table."
+            title={t('collections.emptyTitle', { name: activeCollection.name })}
+            description={t('collections.emptyHint')}
             action={
               <Link
                 href="/app/discover"
                 className="focus-ring inline-flex h-9 items-center rounded-lg bg-[var(--accent)] px-3.5 text-[13px] font-medium text-white hover:opacity-90"
               >
-                <Plus className="mr-1.5 size-4" aria-hidden /> Discover opportunities
+                <Plus className="mr-1.5 size-4" aria-hidden /> {t('collections.discoverCta')}
               </Link>
             }
           />
@@ -196,7 +198,7 @@ export function CollectionsManager({
                   <button
                     type="button"
                     onClick={() => setDrawerOpp(o)}
-                    aria-label={`View details: ${o.title}`}
+                    aria-label={`${t('common.open')}: ${o.title}`}
                     className="focus-ring block w-full rounded-xl text-left"
                   >
                     <CardContent className="space-y-2.5">
@@ -218,7 +220,7 @@ export function CollectionsManager({
                   <button
                     type="button"
                     onClick={() => void removeItem(o)}
-                    aria-label={`Remove ${o.title} from ${activeCollection.name}`}
+                    aria-label={`${t('common.remove')}: ${o.title}`}
                     className="focus-ring absolute right-2.5 top-2.5 grid size-7 place-items-center rounded-lg text-[var(--text-muted)] opacity-0 transition-opacity hover:bg-[var(--surface-hover)] hover:text-[color:var(--color-negative)] group-hover:opacity-100"
                   >
                     <X className="size-3.5" />

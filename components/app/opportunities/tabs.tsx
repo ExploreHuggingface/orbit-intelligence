@@ -8,6 +8,7 @@ import { cn } from '@/lib/easyui/utils';
 import { bulkUpdateStatusAction } from '@/lib/actions/app';
 import { toastSuccess, actionError } from '@/components/ui/toast-helpers';
 import { STATUS_LABELS, type OpportunityStatus } from '@/lib/types';
+import { useI18n } from '@/lib/i18n/context';
 
 const TABS: Array<{ value: OpportunityStatus | 'all'; label: string }> = [
   { value: 'all', label: 'All' },
@@ -29,32 +30,33 @@ export function OpportunitiesTabs({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t: tr } = useI18n();
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label="Opportunity status">
-        {TABS.map((t) => (
+        {TABS.map((tab) => (
           <button
-            key={t.value}
+            key={tab.value}
             role="tab"
-            aria-selected={activeTab === t.value}
+            aria-selected={activeTab === tab.value}
             onClick={() => {
               const params = new URLSearchParams(searchParams.toString());
-              if (t.value === 'all') params.delete('status');
-              else params.set('status', t.value);
+              if (tab.value === 'all') params.delete('status');
+              else params.set('status', tab.value);
               params.delete('page');
               router.push(`/app/opportunities?${params.toString()}`, { scroll: false });
             }}
             className={cn(
               'focus-ring inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
-              activeTab === t.value
+              activeTab === tab.value
                 ? 'border-transparent bg-[var(--accent)] text-white'
                 : 'border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:border-[var(--border-hover)] hover:text-[var(--text-primary)]'
             )}
           >
-            {t.label}
-            <span className={cn('tnum text-[11px]', activeTab === t.value ? 'text-white/70' : 'text-[var(--text-muted)]')}>
-              {counts[t.value] ?? 0}
+            {tab.label === 'All' ? tr('opp.tab.all') : STATUS_LABELS[tab.value as keyof typeof STATUS_LABELS] ? tr(`status.${tab.value}` as never) : tab.label}
+            <span className={cn('tnum text-[11px]', activeTab === tab.value ? 'text-white/70' : 'text-[var(--text-muted)]')}>
+              {counts[tab.value] ?? 0}
             </span>
           </button>
         ))}
@@ -74,6 +76,7 @@ export function BulkActionBar({
 }) {
   const router = useRouter();
   const [pending, setPending] = React.useState<string | null>(null);
+  const { t } = useI18n();
   if (selectedIds.length === 0) return null;
 
   const apply = async (status: OpportunityStatus) => {
@@ -81,22 +84,22 @@ export function BulkActionBar({
     const res = await bulkUpdateStatusAction(selectedIds, status);
     setPending(null);
     if (actionError(res)) return;
-    toastSuccess(`${selectedIds.length} opportunities → ${STATUS_LABELS[status]}`);
+    toastSuccess(t('opp.bulkToast', { count: selectedIds.length, status: t(`status.${status}` as never) }));
     onDone();
     router.refresh();
   };
 
   const actions: Array<{ status: OpportunityStatus; label: string; Icon: typeof Star }> = [
-    { status: 'shortlisted', label: 'Shortlist', Icon: Star },
-    { status: 'under_review', label: 'Under review', Icon: SearchCheck },
-    { status: 'dismissed', label: 'Dismiss', Icon: CircleSlash },
-    { status: 'purchased', label: 'Purchased', Icon: ShoppingBag },
+    { status: 'shortlisted', label: 'opp.shortlist', Icon: Star },
+    { status: 'under_review', label: 'opp.underReview', Icon: SearchCheck },
+    { status: 'dismissed', label: 'opp.dismiss', Icon: CircleSlash },
+    { status: 'purchased', label: 'opp.purchased', Icon: ShoppingBag },
   ];
 
   return (
     <div className="fixed inset-x-0 bottom-6 z-40 mx-auto flex w-fit max-w-[92vw] items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 shadow-[var(--shadow-lg)]">
       <span className="tnum text-[13px] font-medium text-[var(--text-primary)]">
-        {selectedIds.length} selected
+        {selectedIds.length} {t('opp.selected')}
       </span>
       <span className="h-5 w-px bg-[var(--border)]" aria-hidden />
       {actions.map(({ status, label, Icon }) => (
@@ -114,7 +117,7 @@ export function BulkActionBar({
       <button
         type="button"
         onClick={onDone}
-        aria-label="Clear selection"
+        aria-label={t('common.clearAll')}
         className="focus-ring grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)]"
       >
         <CheckCheck className="size-4" aria-hidden />
