@@ -638,7 +638,6 @@ function insertPlans(db: Db): void {
 
 export function seedGlobals(db: Db): void {
   insertPlans(db);
-  seedDemoAccount(db);
 
   const oppStmt = db.prepare(
     `INSERT INTO opportunities (id, user_id, title, description, category, image_url, source_marketplace, source_url,
@@ -724,6 +723,10 @@ export function seedGlobals(db: Db): void {
     }
   });
   tx();
+
+  // Demo account last: its seeded notifications/collections reference the
+  // global opportunities inserted above (FK-linked demo content).
+  seedDemoAccount(db);
 }
 
 /** Fixed demo account on every instance (serverless-friendly login). */

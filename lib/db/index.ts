@@ -7,7 +7,9 @@
 
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import Database from 'better-sqlite3';
 import type BetterSqlite3 from 'better-sqlite3';
+import { seedGlobals, seedUserContent } from './seed';
 
 export type Db = BetterSqlite3.Database;
 
@@ -15,7 +17,12 @@ export type Db = BetterSqlite3.Database;
 // writable location. The database is ephemeral there (resets on cold starts);
 // set the Supabase env vars for durable production storage.
 const IS_VERCEL = Boolean(process.env.VERCEL);
-const DATA_DIR = IS_VERCEL ? '/tmp/orbit-local' : join(process.cwd(), '.orbit-local');
+// Pinned per deployment: warm lambdas must never reuse a /tmp database written
+// by an older build (schema/seed drift). Instances within a deployment each
+// still own their ephemeral file; session-claims bootstrap handles that.
+const DATA_DIR = IS_VERCEL
+  ? `/tmp/orbit-${process.env.VERCEL_DEPLOYMENT_ID ?? 'dev'}`
+  : join(process.cwd(), '.orbit-local');
 const DB_PATH = join(DATA_DIR, 'orbit.db');
 
 declare global {
@@ -198,9 +205,6 @@ CREATE TABLE IF NOT EXISTS video_reviews (
 
 export function getDb(): Db {
   if (globalThis.__orbitDb) return globalThis.__orbitDb;
-  // Lazy require so static builds never load the native module.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Database = require('better-sqlite3') as unknown as typeof BetterSqlite3;
   if (!existsSync(DATA_DIR)) mkdirSync(DATA_DIR, { recursive: true });
   const db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
@@ -211,8 +215,6 @@ export function getDb(): Db {
   // Seed plans + global sample content on first run (idempotent).
   const plansCount = (db.prepare('SELECT COUNT(*) AS n FROM plans').get() as { n: number }).n;
   if (plansCount === 0) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { seedGlobals } = require('./seed') as typeof import('./seed');
     seedGlobals(db);
     console.log('[orbit] local database seeded with demo content');
   }
@@ -220,8 +222,4 @@ export function getDb(): Db {
 }
 
 /** Per-user demo content, created on signup so every page has data on first login. */
-export function seedForUser(db: Db, userId: string, planCode: 'free' | 'pro' = 'free'): void {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { seedUserContent } = require('./seed') as typeof import('./seed');
-  seedUserContent(db, userId, planCode);
-}
+export { seedUserContent as seedForUser } from './seed';
