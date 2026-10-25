@@ -1,0 +1,705 @@
+# ORBIT Intelligence — Master Build Prompt & Complete Project Plan
+
+**Version 2.0 — Production Architecture Blueprint**
+
+---
+
+## How to Read This Document
+
+This is not a feature list. It is a **complete build specification** organized in the order you will execute it: first the product thesis, then the system architecture, then the data pipeline, then the design system, then every page with its exact behavior, then the implementation sequence. Every section is written to be handed to a coding agent or a development team without further clarification.
+
+The frontend prototype and the production backend are specified together because the frontend must be architected against the backend contract from day one. Building the UI against mock data with a different shape than the real API is the most common cause of expensive rewrites in SaaS products.
+
+---
+
+# Part I — Product Thesis & Scope
+
+## 1. What ORBIT Is
+
+**ORBIT Intelligence** is a personal internet intelligence platform that continuously searches the web for products, properties, investments, rare items, price drops, and emerging opportunities. Users describe what they want in natural language; ORBIT finds relevant listings across marketplaces, compares prices against estimated reference values, tracks availability, scores each match, and notifies users when new matching results appear.
+
+The product sits at the intersection of three categories that are usually separate:
+
+| Category | What it provides | What it lacks |
+|---|---|---|
+| **Search engine** | Discovery | No persistence, no monitoring, no evaluation |
+| **CRM** | Organization and workflow | No autonomous discovery |
+| **Market intelligence** | Analysis | No personal, actionable opportunity tracking |
+
+ORBIT is the **operational layer** that turns passive web search into an active opportunity pipeline. It is a command center, not a chatbot. Every interaction produces a structured record — a monitor, an opportunity, a collection, a comparison, a notification — not a conversation transcript.
+
+## 2. Who Uses It and Why
+
+The primary user is a **high-intent individual operator** — an investor, collector, restorer, or deal-hunter who currently manages discovery across spreadsheets, browser bookmarks, and manual marketplace checks. They are willing to pay $49–$299 per month because a single missed opportunity (a mispriced property, a rare part that sells in hours, a watch listed below market) costs more than a year of subscription.
+
+**Representative workflows:**
+
+A real estate investor wants apartments in Berlin-Friedrichshain under €350k with an estimated gross rental yield above 5.5%. Today they check ImmobilienScout24 and Kleinanzeigen twice a day. ORBIT monitors both sources continuously, scores each new listing against their yield model, and pushes a notification with the deal analysis already computed.
+
+A Porsche restorer needs an OEM 911 (997-generation) headlight. These appear on forums and eBay irregularly and sell within hours. ORBIT watches the relevant sources, matches on part number and condition, and alerts instantly — while the listing is still live.
+
+A watch collector wants an Omega Seamaster below €4,000 in excellent condition with box and papers. ORBIT monitors Chrono24 and eBay, compares each listing to a reference price band, and flags the ones that are meaningfully below it.
+
+## 3. Scope Boundaries
+
+**In scope for the React prototype:** every page, every interaction, every state transition, full LocalStorage persistence, realistic demo data, functional search over the demo dataset, functional monitor CRUD, functional charts with date filters, and a service layer that mirrors the production API contract.
+
+**Out of scope for the prototype (explicitly labeled as not connected):** live web crawling, real-time price verification, actual seller availability checks, genuine AI inference, payment processing, and authentication beyond a mock session.
+
+**The simulation boundary is a design requirement, not an apology.** Every demo record carries an `isSample: true` flag. Every simulated monitor match displays a "Simulated match — backend crawling not connected" badge. The monitor creation flow ends with a toast: "Monitor saved. Background crawling will activate when the backend is connected." No part of the UI claims 24/7 live monitoring.
+
+---
+
+# Part II — Technical Architecture
+
+## 4. Frontend Stack (Prototype)
+
+Use the existing repository's stack where compatible. The target stack:
+
+| Layer | Technology | Rationale |
+|---|---|---|
+| Bundler | **Vite 7+** | Fastest cold start and HMR; standard for new React apps |
+| Framework | **React 18+** (19 if available) | Concurrent rendering, Suspense |
+| Language | **TypeScript 5+ (strict)** | Non-negotiable for a project of this size |
+| Routing | **React Router 7** (or TanStack Router if the repo already uses it) | File-based or config-based; must support nested layouts |
+| Server state | **TanStack Query 5** | Caching, loading/error states, refetching, optimistic updates — all server data flows through it |
+| Client state | **Zustand 5** | Sidebar collapsed, theme, selected filters, UI preferences — *never* server data |
+| Forms | **React Hook Form + Zod** | Monitor creation (multi-step), settings, filters |
+| UI primitives | **shadcn/ui + Radix** (if not already present) | Accessible, unstyled-then-styled components; no runtime lock-in |
+| Styling | **Tailwind CSS 4** | Utility-first with design tokens; v4 is the 2026 standard |
+| Icons | **Lucide React** | Consistent stroke system, no emoji |
+| Charts | **Recharts** | Responsive, composable, tooltip support |
+| Toasts | **Sonner** (or shadcn toast) | Accessible, stacked, dismissible |
+| Testing | **Vitest + React Testing Library + MSW** | Unit, component, and API-mock integration tests |
+
+**State management discipline — this is an architectural rule, not a suggestion:**
+
+TanStack Query owns **all data that originates from a server** (in the prototype, from the service layer): opportunities, monitors, notifications, collections, activity, market charts. Zustand owns **only pure client state**: whether the sidebar is collapsed, which filter panel is open, the current view mode (grid/table), the selected comparison IDs. Never cache server data in Zustand. Never put UI preferences in TanStack Query.
+
+## 5. Service Layer — The Backend Contract
+
+The frontend never imports `demoData.ts` directly in a component. Every data access goes through a service module. In the prototype these modules return demo data and persist to LocalStorage; in production they call the backend API. **The method signatures do not change between the two implementations.**
+
+```
+src/services/
+  searchService.ts       → search(query, filters, page), getSuggestions(query), getRecentQueries()
+  opportunityService.ts  → list(filters), getById(id), updateStatus(id, status), bulkUpdate(ids, status)
+  monitorService.ts      → list(), getById(id), create(payload), update(id, payload), pause(id), resume(id), delete(id), runSimulated(id)
+  collectionService.ts   → list(), create(name), addItem(collectionId, opportunityId), removeItem(collectionId, opportunityId)
+  notificationService.ts → list(), markRead(id), markAllRead(), getUnreadCount()
+  activityService.ts     → list(filters), log(event)
+  analyticsService.ts    → getDiscoveries(range), getPriceDropsByCategory(range), getDealScoreDistribution(range), getMarketVsListing(range)
+```
+
+Each service returns a `Promise` with a realistic latency (150–400ms simulated) so that loading and error states are actually exercised during development. Each service also exposes an `isSimulated: true` flag on every record, which the UI uses to render the sample-data badge.
+
+**Production backend target** (not built in this prototype, but the contract is designed for it): a Node.js (TypeScript) API or a Python FastAPI service, backed by PostgreSQL for relational data (users, monitors, opportunities, collections), a vector database for semantic search (see Section 7), and a job queue (BullMQ or Celery) for scheduled crawl jobs.
+
+## 6. Web Crawling Architecture (Production Reference)
+
+The prototype does not crawl. The production system uses a **tiered crawling strategy** because no single scraper wins on every source type.
+
+### 6.1 The Three Tiers
+
+| Tier | Tool | What it handles | Why not a single tool |
+|---|---|---|---|
+| **Tier 1 — General web intelligence** | **Firecrawl** (hosted API or self-hosted AGPL) | Natural-language discovery queries across arbitrary sites. Returns LLM-ready Markdown or structured JSON via `/scrape`, `/crawl`, `/map`, `/search`, and `/extract`. The `/extract` endpoint accepts natural-language schemas — no CSS selectors. Handles JS rendering, proxy rotation, and anti-bot mitigation automatically. | Best for breadth and LLM-readiness; not optimized for high-frequency polling of a known marketplace endpoint. |
+| **Tier 2 — Marketplace-specific** | **Apify Actors** | Pre-built scrapers for Amazon, eBay, Zillow, ImmobilienScout24, Chrono24, Kleinanzeigen, and thousands more. Run an actor via REST, receive normalized JSON. | Actor quality varies by marketplace; not every niche forum has an actor. |
+| **Tier 3 — Custom JS-heavy / anti-bot** | **Playwright + Crawlee** (Node/TypeScript) | Real estate portals that re-fetch results via map-bounds XHR, hide price data in JSON-LD, or sit behind Cloudflare/AWS WAF. Crawlee provides request queues, proxy rotation, auto-scaling, and Playwright/Puppeteer crawler wrappers. | Highest control, highest operational cost; used only where Tiers 1–2 fail. |
+
+### 6.2 Data Pipeline — From Crawl to Opportunity
+
+The pipeline is an **indexing pipeline** and a **query pipeline**, mirroring the architecture used in production AI search systems.
+
+**Indexing pipeline (runs on a schedule per monitor):**
+
+```
+Monitor criteria → Crawl job enqueued → Source fetched (Firecrawl / Apify / Playwright)
+→ Raw HTML or JSON → Normalization to common Opportunity schema
+→ LLM entity extraction (title, price, currency, location, attributes, condition, seller)
+→ Embedding generation → Vector database upsert
+→ Match scoring against monitor criteria → Ranked opportunity records
+→ Notification event emitted if score exceeds threshold
+```
+
+Entity extraction uses **schema-constrained LLM extraction with gleaning** — a two-pass approach that catches 20–30% additional entities by re-asking the model what it missed on the first pass. Extracted values are normalized through a multi-step process: backfill missing fields, ground values against the source text, deduplicate same-name entities with different labels, and validate against a category taxonomy.
+
+**Query pipeline (when a user searches or a monitor is evaluated):**
+
+```
+User query → Embedding → Vector similarity search (hybrid: vector + keyword)
+→ Retrieve top-K candidates → Rerank against the structured query intent
+→ Apply hard filters (price range, category, location)
+→ Score and rank → Return paginated results
+```
+
+The two-stage retrieval (vector search → rerank) is not optional. Vector proximity is a proxy for semantic similarity, not for whether a document answers the query. A reranking model asks "Does this listing match the user's actual criteria?" rather than "Is this listing about similar things?".
+
+### 6.3 Vector Database Selection
+
+| Option | Strengths | When to choose |
+|---|---|---|
+| **Qdrant** | Named vectors, hybrid search, multi-stage queries, weighted reranking, on-prem, quantization, on-disk storage | Default choice for self-hosted production with hybrid search needs |
+| **Milvus** | Distributed, massive multi-tenancy, independent scaling of ingestion/indexing/query | When write throughput and tenant isolation dominate |
+| **pgvector** | Lives in PostgreSQL, no separate infrastructure, `unnest` batch inserts | Early stage or when the relational database already exists |
+| **Elasticsearch Vector Database** | Serverless, built-in hybrid search, managed embeddings via Jina models, binary quantization (32× memory reduction) | When operational simplicity and predictable cost matter more than full control |
+
+**Recommendation for ORBIT:** start with **pgvector** in the prototype-to-production transition (no new infrastructure), migrate to **Qdrant** when hybrid search and reranking latency become the bottleneck, and consider **Elasticsearch Vector Database** if the team prefers a managed, serverless path.
+
+## 7. Data Model
+
+Every record in the system conforms to one of these types. The same TypeScript types are used by the service layer and the UI.
+
+```typescript
+type OpportunityCategory =
+  | "real_estate" | "cars_parts" | "watches"
+  | "electronics" | "home_living" | "fashion" | "other";
+
+type OpportunityStatus =
+  | "new" | "shortlisted" | "under_review"
+  | "dismissed" | "purchased" | "completed";
+
+interface Opportunity {
+  id: string;
+  title: string;
+  description: string;
+  category: OpportunityCategory;
+  imageUrl: string | null;          // fallback placeholder if null
+  sourceMarketplace: string;
+  sourceUrl: string;
+  currentPrice: number;
+  currency: string;
+  previousPrice: number | null;
+  estimatedMarketValue: number | null;   // labeled "illustrative estimate"
+  priceChangePct: number | null;
+  dealScore: number;                     // 0–100
+  matchScore: number;                    // 0–100 against originating monitor
+  status: OpportunityStatus;
+  discoveredAt: string;                  // ISO 8601
+  lastCheckedAt: string | null;
+  isSample: true;                        // prototype records
+  evidenceLinks: string[];
+  attributes: Record<string, string | number | boolean>;
+  realEstate?: {
+    city: string;
+    neighborhood: string;
+    areaSqm: number;
+    bedrooms: number;
+    askingPrice: number;
+    estimatedMonthlyRent: number;
+    grossYieldPct: number;
+    estimatedAnnualExpenses: number;
+    netYieldPct: number | null;
+  };
+  priceHistory: { date: string; price: number }[];
+}
+```
+
+Monitors, collections, notifications, and activity events follow the same pattern: a typed record with an `isSample` flag, a stable ID, and ISO timestamps. See the folder structure in Part VIII for file locations.
+
+---
+
+# Part III — Design System
+
+## 8. Visual Language
+
+The interface must feel like **precision-engineered enterprise software with editorial restraint** — the quality bar set by Attio, Linear, and Stripe, but with its own identity.
+
+Attio's design system demonstrates the principle clearly: a near-white canvas, near-black type, one vivid accent color, and micro-detail rather than decoration. Headlines carry significant negative letter-spacing; body text uses weight 500 (heavier than typical) for readability in dense UIs; the palette is deliberately achromatic except for state communication. Linear achieves a similar effect with Inter Variable, OpenType stylistic sets, and consistent 400–590 weight discipline. Stripe uses a single typeface at weight 300 across all sizes, reading as "confident restraint rather than corporate shouting".
+
+ORBIT adopts these principles: **one accent color used sparingly, typographic hierarchy through weight and tracking rather than size alone, and borders/shadows that recede rather than announce.**
+
+### 8.1 Color Tokens
+
+All colors are semantic tokens. No component hardcodes a hex value. Use CSS custom properties (`--color-*`) so the system can be themed later.
+
+| Token | Value | Role |
+|---|---|---|
+| `--color-canvas` | `#F7F8FA` | Page background |
+| `--color-surface` | `#FFFFFF` | Cards, sidebar, topbar |
+| `--color-surface-subtle` | `#FCFCFD` | Nested surfaces, table header |
+| `--color-ink` | `#172033` | Primary text |
+| `--color-ink-secondary` | `#667085` | Secondary text, descriptions |
+| `--color-ink-tertiary` | `#98A2B3` | Captions, placeholders |
+| `--color-accent` | `#635BFF` | Primary actions, active nav, focus rings |
+| `--color-accent-subtle` | `#F0EFFF` | Active nav background, accent wash |
+| `--color-border` | `#E7EAF0` | Card borders, dividers, input borders |
+| `--color-border-strong` | `#D0D5DD` | Emphasized borders, hover state |
+| `--color-success` | `#16A36A` | Positive trends, deal wins |
+| `--color-warning` | `#E6A23C` | Caution badges, expiring monitors |
+| `--color-danger` | `#E05260` | Destructive actions, price increases |
+| `--color-info` | `#667085` | Neutral badges |
+
+### 8.2 Typography
+
+**Typeface:** Inter Variable (or `Inter` with fallback to system sans). Enable OpenType feature `"ss03"` globally for character disambiguation in data-dense tables.
+
+| Role | Size | Weight | Tracking | Line height |
+|---|---|---|---|---|
+| Display / H1 | 28px | 600 | -0.02em | 1.2 |
+| H2 / Section | 20px | 600 | -0.015em | 1.3 |
+| H3 / Card title | 15px | 600 | -0.01em | 1.4 |
+| Body | 14px | 500 | -0.006em | 1.5 |
+| Small / Table cell | 13px | 500 | 0 | 1.45 |
+| Caption / Label | 12px | 500 | 0.01em | 1.4 |
+| Mono / Price | 13px | 500 | 0 | tabular-nums |
+
+Use `font-variant-numeric: tabular-nums` on all price, score, and metric displays. Prices should never shift horizontally as values change.
+
+### 8.3 Spacing & Layout
+
+A 4px base unit. Component padding: 12px (compact), 16px (default), 20px (comfortable), 24px (section). Card radius: 12px. Button radius: 8px (not pill-shaped — excessive rounding is a design smell). Input radius: 8px. Border width: 1px throughout; shadows are soft and blue-tinted at very low opacity (max `0 1px 3px rgba(23, 32, 51, 0.04)`).
+
+**Layout structure:** persistent left sidebar (240px expanded, 64px collapsed), slim topbar (56px), main content area with `max-width: 1440px` and horizontal padding of 32px (desktop), 24px (tablet), 16px (mobile).
+
+### 8.4 Component States
+
+Every interactive element has defined states for **default, hover, focus-visible, active, disabled, and loading**. Focus rings use `--color-accent` at 2px offset. Buttons show a spinner and disable during async actions. Tables show skeleton rows on initial load; empty states show a lucide icon, a one-line explanation, and a primary action. Error states show a retry button and preserve the user's input.
+
+**No emoji anywhere.** Icons are Lucide, 16px or 18px, stroke width 1.75. Status is communicated through badges (small, 11px uppercase label, semantic background at 10% opacity) — not through colored dots alone.
+
+---
+
+# Part IV — Application Shell & Navigation
+
+## 9. Sidebar
+
+**Structure:**
+
+- **Logo block:** orbital mark + "ORBIT" wordmark + small "Intelligence" caption. Clicking navigates to Overview.
+- **WORKSPACE group:** Overview, Discover, Opportunities, Monitors, Collections, Comparisons.
+- **INTELLIGENCE group:** Market Insights, Price History, Video Reviews.
+- **MANAGEMENT group:** Notifications (with unread count badge), Activity, Integrations.
+- **Bottom block:** usage/plan indicator (progress bar showing "Monitors used: 12 of 20"), Settings, Help & Support, user avatar with dropdown (Account, Preferences, Sign out).
+
+**Behavior:** active item has `--color-accent-subtle` background and `--color-accent` icon + text. Sidebar collapses to icons on desktop via a toggle button in the topbar; on mobile it becomes a full-height drawer triggered by a hamburger menu. The collapsed state persists to LocalStorage. Every link is a React Router `NavLink` — no dead `<a href="#">` links.
+
+## 10. Topbar
+
+- Mobile: hamburger + logo.
+- Desktop: breadcrumb (e.g., Workspace / Overview) on the left; right side has notification bell (with dropdown preview of the latest 5 notifications), a "New Monitor" button (primary, accent), and the user avatar.
+- The notification bell dropdown shows unread notifications with mark-as-read on click, a "View all" link, and a "Mark all as read" action. It closes on outside click and on Escape.
+
+---
+
+# Part V — Page Specifications
+
+Each page below specifies its layout, data sources, interactions, and edge cases. This is the level of detail the implementation should follow.
+
+## 11. Overview Dashboard (`/`)
+
+### 11.1 Header
+
+Greeting: **"Your next opportunity is out there."** Supporting text: **"Your internet intelligence, organized in one place."** Right side: "New Monitor" primary button, notification bell with unread count, user profile menu. Breadcrumb: `Workspace / Overview`.
+
+### 11.2 Discovery Panel
+
+A compact search workspace — **not a chat composer**. White card, 20px padding, subtle border.
+
+- Title: "What are you looking for?"
+- Subtitle: "Describe an opportunity. ORBIT will find, compare, and monitor matching results across the web."
+- Search field: full-width, 48px height, search icon on the left, placeholder: `e.g. Undervalued apartments in Berlin with 6%+ rental yield...`
+- Category chips below the field: Real Estate, Cars & Parts, Watches, Electronics, Home & Living, Custom Search. Clicking a chip sets the active category and updates the placeholder and example queries for that category.
+- Primary button: "Discover Opportunities" — disabled when the field is empty, triggers navigation to `/discover?q={encodedQuery}&category={category}`.
+- Example searches below the button (3 per category): clicking an example populates the field and focuses it; pressing Enter or clicking the button submits.
+
+**No conversation history. No message bubbles. No AI avatar. The panel is a search form with premium styling.**
+
+### 11.3 KPI Cards (4)
+
+Grid of four white cards, each with an icon in an accent-tinted circle, a label, a large value, a trend indicator (green up or red down with the comparison period), and a small sparkline (7 data points, drawn with Recharts `<LineChart>` at 40px height, no axes).
+
+| Metric | Value | Trend | Sparkline shape |
+|---|---|---|---|
+| Active Monitors | 12 | +2 this week | Upward |
+| Matching Opportunities | 284 | 8 new today | Upward |
+| Price Drops Detected | 37 | +5 this week | Volatile upward |
+| Estimated Savings Found | €18,450 | Illustrative estimate | Steady |
+
+The savings card carries a small info icon with a tooltip: "Illustrative estimate based on sample data. Not verified savings."
+
+Clicking a KPI card navigates to the relevant filtered page (Monitors, Opportunities, Opportunities filtered by price-drop, Opportunities sorted by savings).
+
+### 11.4 Fresh Opportunities Table
+
+Title: "Fresh Opportunities". Subtitle: "Sample data — newly discovered listings matching your monitors."
+
+**Columns:** thumbnail (40×40, rounded 6px, fallback placeholder with category icon), item name + one-line description, category badge, source marketplace (text, small), current price (tabular nums), previous price / estimated market value (struck through or muted), deal score (0–100 with a small horizontal bar), price change (green down / red up with arrow), discovered date (relative: "2h ago"), watchlist action (star icon toggle), view details (chevron or "Details" text button).
+
+**Example rows (all flagged `isSample: true`):**
+
+| Item | Price | Reference | Deal score | Change |
+|---|---|---|---|---|
+| Berlin Apartment, Friedrichshain | €285,000 | €325,000 est. | 87 | −12% vs est. |
+| Omega Seamaster Watch | €3,250 | €3,800 est. | 82 | −14% vs est. |
+| Sony Alpha Camera Bundle | €1,180 | €1,340 | 76 | −12% |
+| Porsche 911 OEM Headlight | €640 | — | 71 | Rare listing |
+| Mulberry Silk Bedsheet Set | €189 | €230 | 68 | −18% |
+
+**Features:** search-within-results input (filters by title, source, category), category filter dropdown, sort dropdown (Newest, Lowest price, Highest deal score, Biggest price drop), pagination (10 per page with "Load more" or numbered pages — choose one and implement it fully). Clicking a row opens a **detail drawer** from the right (480px wide, full-screen on mobile) with the full opportunity record, price history chart, deal analysis, source link, "Save to collection", "Start monitoring", and "Mark as interesting" actions.
+
+### 11.5 Active Monitors Widget
+
+Card with header "Active Monitors" and a "View all" link. Table columns: monitor name, category, match count, last checked (relative), status badge (Active / Paused), notification preference icon (bell / mail / bell-off), actions (pause/resume toggle, edit pencil, overflow menu with delete). Example monitors:
+
+- Berlin apartments under €350k — Real Estate — 47 matches — checked 12 min ago — Active — Instant alerts.
+- Omega watches below €4,000 — Watches — 23 matches — checked 1h ago — Active — Daily digest.
+- Porsche 911 OEM parts — Cars & Parts — 8 matches — checked 3h ago — Paused — Instant alerts.
+- Silk bedding under €250 — Home & Living — 31 matches — checked 6h ago — Active — Price-drop only.
+
+Footer: "Create Monitor" secondary button and "View All Monitors" link. Every row action works: pause/resume updates state and persists; edit opens the monitor form pre-filled; delete opens a confirmation dialog.
+
+### 11.6 Market Intelligence Panel
+
+Full-width card with a date-range selector (7 days / 30 days / 90 days — clicking actually changes the data), rendered with Recharts.
+
+**Charts:**
+
+1. **Opportunity discoveries over time** — area chart, x-axis dates, y-axis count, gradient fill in accent color at 15% opacity.
+2. **Price drops by category** — horizontal bar chart, categories on y-axis, count on x-axis, bars in accent color with hover tooltip showing the count and average drop percentage.
+3. **Average deal score** — a single large metric with a small line chart showing the trend over the selected range.
+4. **Market price vs. listing price** — scatter plot or dual-bar chart, with a legend explaining that market price is an illustrative estimate.
+
+All charts use `ResponsiveContainer`, subtle grid lines (`--color-border` at 0.5 opacity), formatted currency axes (`€12k`), and tooltips with white background, border, and 8px radius. Charts re-render when the date range changes — the data is computed from `demoData` with date filtering, not hardcoded.
+
+### 11.7 Recent Activity
+
+Vertical timeline with icons in small circles (search, bell, tag, file-text), activity text with inline links to the relevant record, and relative timestamps. Examples: "New matching property found — Berlin Apartment, Friedrichshain" (2h ago), "Watch price dropped 8% — Omega Seamaster" (5h ago), "New rare part available — Porsche 911 Headlight" (1d ago), "Weekly monitoring report completed" (2d ago). Each item links to its opportunity or monitor.
+
+## 12. Discover Page (`/discover`)
+
+### 12.1 Search Bar
+
+Full-width search input at the top with the same placeholder as the dashboard. Below it: recent queries (from LocalStorage, clickable to re-run) and category chips. The query from the dashboard is read from the URL search params (`?q=...&category=...`) on mount and populates the field and results.
+
+### 12.2 Filter Sidebar (Left, 260px)
+
+Filters adapt to the selected category.
+
+**Real estate:** City (select), Neighborhood (multi-select), Price min/max (range inputs), Property type (checkboxes: apartment, house, loft), Bedrooms (1+, 2+, 3+), Estimated gross yield min (slider 0–10%), Price per m² max, Investment budget max.
+
+**Product categories:** Brand (multi-select), Price min/max, Condition (New, Like new, Good, Fair), Seller/Marketplace (checkboxes), Availability (In stock, Limited, Pre-order), Price drop only (toggle), Rating min (stars), Delivery options (checkboxes).
+
+**Filter behavior:** filters apply immediately (debounced 300ms) to the results. Active filters show as removable chips above the results. A "Clear all" button resets them. The filter panel collapses on tablet and becomes a bottom sheet on mobile.
+
+### 12.3 Results Area
+
+Top bar: result count ("247 opportunities"), view toggle (grid/table icons), sort dropdown, "Save Search" button, "Create Monitor" button.
+
+**Grid view:** responsive card grid (3 columns desktop, 2 tablet, 1 mobile). Each card: image (16:9, fallback placeholder), title, source, price (large), comparison price (muted), match score badge, deal score bar, and a primary action ("View details") that opens the detail drawer.
+
+**Table view:** same columns as the dashboard opportunity table, with the same sort and pagination logic.
+
+**Search behavior:** the query is matched against title, description, category, source, and attributes in `demoData`. If no results match, show an empty state: "No opportunities match your search. Try broadening your filters or creating a monitor to be notified when matching items appear." The search button is never inert.
+
+### 12.4 Result Detail Drawer
+
+Opens from the right, 560px wide (full-screen mobile). Content:
+
+- Image gallery (main image + thumbnails; clicking a thumbnail swaps the main image).
+- Title, source, source link (opens in new tab).
+- Price block: current price, previous price, estimated market value, price change with arrow, deal score with a short explanation ("18% below estimated reference price").
+- Historical price chart (line chart, 30 or 90 days, from `priceHistory`).
+- Pros and cons (two columns with check/x icons) — demo content, clearly labeled as illustrative.
+- Related alternatives (2–3 cards).
+- Video review links (if available, from `videoReviews` demo data).
+- Actions: "Save to collection" (dropdown of collections), "Start monitoring" (opens monitor form pre-filled from this listing), "Mark as interesting" (adds to a Shortlisted status), "Close".
+
+## 13. Opportunities Page (`/opportunities`)
+
+Professional pipeline workspace. Tabs: All, New, Shortlisted, Under Review, Dismissed, Purchased / Completed. Each tab shows a count.
+
+**Table columns:** checkbox for bulk selection, item, category, source, price, reference value, difference (absolute and percentage), deal score, status badge, discovered date, actions (view, shortlist, dismiss).
+
+**Bulk actions:** when rows are selected, a floating action bar appears at the bottom: "N selected" with actions: Shortlist, Mark under review, Dismiss, Add to collection. Bulk actions update all selected records and show a toast.
+
+**Deal evaluation panel:** clicking a row opens a right drawer (or navigates to `/opportunities/:id`) with:
+
+- Listing price, estimated reference price, absolute difference, percentage difference.
+- Confidence level badge (High / Medium / Low) with an explanation of what drives confidence (data freshness, number of comparable listings, attribute completeness).
+- Data freshness: "Last checked 2h ago" with a clock icon.
+- Supporting evidence: source links, comparable listings count.
+- For real estate: asking price, estimated monthly rent, gross annual yield, estimated annual expenses, net yield (when data is sufficient). Assumptions displayed in a collapsible panel: "Yield estimates assume 3% vacancy, €2.50/sqm/month maintenance, and current market rent. These are illustrative estimates, not guarantees."
+
+**Critical labeling:** every reference value is marked "Illustrative estimate". The evaluation panel includes a footer: "AI-generated estimates are illustrative and do not guarantee investment returns."
+
+## 14. Monitors Page (`/monitors`)
+
+### 14.1 Monitor List
+
+Table of all monitors with columns: name, category, match count, last checked, frequency, status, notification preference, actions (pause/resume, edit, delete). Sorting by name, match count, and last checked. Search within monitors.
+
+### 14.2 Create Monitor — Multi-Step Modal
+
+Four steps, with a progress indicator at the top. State is preserved when navigating between steps. The modal is 640px wide (full-screen on mobile).
+
+**Step 1 — Define what to monitor:** natural language description textarea (required, min 10 chars), category select, optional URL/domain restriction input (e.g., `immobilienscout24.de`). Helper text: "Describe the opportunity in plain language. Include location, condition, or any attributes that matter."
+
+**Step 2 — Matching criteria:** price range (min/max), keywords (tag input), required attributes (key-value pairs or checkboxes depending on category), excluded terms (tag input), match sensitivity slider (Broad / Balanced / Strict). Each sensitivity level shows a one-line explanation.
+
+**Step 3 — Notifications:** toggles for In-app notifications (on by default), Email (off), Instant alerts vs. Daily digest (radio), Price-drop-only alerts (toggle). Disabled states explained: "Email requires account verification — not available in this prototype."
+
+**Step 4 — Review:** monitor name (editable, auto-generated from the description), a read-only summary of all criteria, estimated monitoring frequency ("Every 30 minutes — simulated in this prototype"), and an "Activate Monitor" primary button.
+
+**On submit:** the monitor is saved to LocalStorage, the modal closes, and a toast appears: "Monitor saved. Background crawling will activate when the backend is connected." A simulated match event may fire after 3–5 seconds: a notification appears in the bell dropdown and on the Notifications page, labeled **"Simulated match — demo data"**. This simulates the monitoring loop without claiming live crawling.
+
+**Edit mode:** the same modal opens pre-filled; the submit button reads "Save changes". **Pause/resume** updates the status in the table and persists. **Delete** opens a confirmation dialog with the monitor name, and on confirm removes it and shows a toast with an "Undo" action (undo restores it from a temporary state).
+
+## 15. Collections Page (`/collections`)
+
+Sidebar list of collections (Dream Home Investments, Watch Wishlist, Rare Car Parts, Home Upgrade) with item counts. Clicking a collection shows its items in a grid or table. "New Collection" button opens a small inline form (name input + create). Items can be removed from a collection (with undo toast). Adding items happens from the opportunity detail drawer — the collection page shows a "Add items" hint that links to Discover.
+
+**Empty state per collection:** "No items yet. Browse Discover and click 'Save to collection' on any opportunity."
+
+## 16. Comparisons Page (`/comparisons`)
+
+Select 2–4 opportunities via a search-and-select interface or from a collection. The comparison table renders columns for each selected item and rows for: price, estimated market value, condition, key features, seller, source, availability, match score. For real estate, additional rows: area, bedrooms, asking price, estimated monthly rent, gross yield, net yield (if available). Differences are highlighted with a subtle accent wash on the best value per row — **not** with exaggerated badges or "WINNER" labels. A note below the table: "Comparison based on sample data. Estimated values are illustrative."
+
+## 17. Notifications Page (`/notifications`)
+
+Tabs: All, Price Drops, New Matches, Availability Alerts, Monitor Updates. Each notification row: icon by type, title, description, timestamp, read/unread indicator (a small accent dot), and a link to the associated opportunity. Actions: click to mark read and navigate; "Mark all as read" button at the top; unread count persists to LocalStorage.
+
+**Sample notifications:** "Price drop: Omega Seamaster reduced by 8% — now €3,250", "New match: Berlin apartment in Friedrichshain matches 'Berlin apartments under €350k'", "Monitor update: 'Porsche 911 OEM parts' checked 12 sources — 1 new match", "Availability alert: Sony Alpha Camera Bundle back in stock at €1,180".
+
+## 18. Market Insights Page (`/market-insights`)
+
+Category trend cards (average price, 30-day change, listing volume), a large area chart of average prices by category over time, a distribution chart of opportunities by category (donut or horizontal bar), and a "Top movers" table (categories with the largest price drops). Date range selector (30/90/180 days) that updates all charts.
+
+## 19. Price History Page (`/price-history`)
+
+A searchable list of tracked items with sparklines. Selecting an item shows a full-width price history chart with annotations for price drops, plus a listing timeline table (date, event, price, source). Data comes from `priceHistory` arrays in `demoData`.
+
+## 20. Video Reviews Page (`/video-reviews`)
+
+Grid of video review cards: thumbnail (placeholder gradient with play icon if no image), title, reviewer/source, duration, associated product (linked to the opportunity), and a source link. Filter by category and search by title. Clearly labeled "Curated sample content — external links are illustrative."
+
+## 21. Activity Page (`/activity`)
+
+Chronological feed of all user actions and simulated monitoring events: searches run, monitors created/edited/paused, opportunities shortlisted/dismissed, collections updated, notifications read. Searchable by text and filterable by event type. Each event has a timestamp and a link to the relevant record.
+
+## 22. Integrations Page (`/integrations`)
+
+Cards for supported marketplaces: Amazon, eBay, Zillow, ImmobilienScout24, Chrono24, Kleinanzeigen, Bring a Trailer, eBay Kleinanzeigen. Each card shows the marketplace logo (or a text mark), a one-line description, and a status badge: **"Not yet connected"** (for all of them in the prototype) with a "Request integration" button that opens a modal explaining that integrations require the production backend. A second section lists "Potential integrations" (Slack, Notion, Google Sheets, Zapier) with the same not-connected treatment. **No card should imply that a live connection exists.**
+
+## 23. Settings Page (`/settings`)
+
+Tabs: Profile, Workspace, Notifications, Data, Account.
+
+- **Profile:** name, email (mock), avatar placeholder, timezone select. Save persists to LocalStorage and shows a toast.
+- **Workspace:** default category, default currency, items per page, theme (Light only — Dark shown as disabled with "Coming later").
+- **Notifications:** toggles for in-app, email (disabled with explanation), weekly digest, price-drop alerts. Saved state persists.
+- **Data:** "Export demo data" (downloads a JSON of the current LocalStorage state), "Reset demo data" (confirmation dialog, restores the seed data), "Clear all collections" (confirmation).
+- **Account:** plan indicator (Pro, $99/mo — sample), usage ("12 of 20 monitors used"), "Manage plan" button (opens a modal explaining billing is not connected in the prototype), sign-out (clears mock session and redirects to a lightweight mock sign-in screen).
+
+---
+
+# Part VI — Interaction & State Requirements
+
+## 24. Every Element Must Work
+
+This is a quality gate, not a suggestion. The following must have meaningful behavior:
+
+Sidebar navigation (React Router), search submission, category chips, example queries, KPI card clicks, table sorting, search-within-results, pagination/load-more, row click → detail drawer, star/watchlist toggle, monitor create/edit/pause/resume/delete, monitor form step navigation with validation, notification read/unread and mark-all, collection create/add/remove, comparison select and remove, date-range filters on charts, settings form save, export/reset data, toast on every mutating action, empty/loading/error states, keyboard focus rings, aria labels on icon-only buttons, and LocalStorage persistence across all user-created records.
+
+**Forbidden:** `<a href="#">`, buttons with empty `onClick`, disabled buttons without an explanation, and search buttons that do nothing.
+
+## 25. State Persistence Map
+
+| Key | Contents | Written by |
+|---|---|---|
+| `orbit.monitors` | User-created and edited monitors | Monitor service |
+| `orbit.opportunities` | Status changes, watchlist flags | Opportunity service |
+| `orbit.collections` | Collections and their item IDs | Collection service |
+| `orbit.notifications` | Read/unread state | Notification service |
+| `orbit.activity` | Append-only activity log | Activity service |
+| `orbit.recentQueries` | Last 10 search queries | Search service |
+| `orbit.ui` | Sidebar collapsed, view mode | Zustand persist |
+| `orbit.settings` | User preferences | Settings form |
+
+On first load, if a key is absent, seed from `demoData`. On reset, clear the keys and re-seed. The export function serializes all keys.
+
+## 26. Loading, Empty, and Error States
+
+**Loading:** skeleton rows in tables (3–5 rows), skeleton cards in grids, a spinner inside primary buttons during async actions. Simulated latency of 150–400ms ensures these states are visible.
+
+**Empty:** contextual icon, one-sentence explanation, and a primary action. Examples: "No monitors yet. Create your first monitor to start tracking opportunities." / "No results for 'xyz'. Try a broader query or different filters." / "No notifications. You're all caught up."
+
+**Error:** a card with a retry button, preserving the user's input and filters. Errors can be simulated in development via a query param (`?simulateError=true`) to verify the state.
+
+---
+
+# Part VII — Responsive Behavior
+
+| Breakpoint | Sidebar | Tables | Filters | Modals |
+|---|---|---|---|---|
+| **Desktop ≥1280px** | Expanded or collapsed | Full columns | Left sidebar | 640px modal, 560px drawer |
+| **Tablet 768–1279px** | Collapsed to icons | Horizontal scroll, sticky first column | Collapsible panel above results | 90% width modal, 70% drawer |
+| **Mobile <768px** | Drawer (hamburger) | Horizontal scroll, key columns pinned | Bottom sheet | Full-screen modal and drawer |
+
+No horizontal page overflow at any breakpoint. Touch targets ≥44px. Charts use `ResponsiveContainer` and resize without overflow.
+
+---
+
+# Part VIII — Folder Structure & Implementation Sequence
+
+## 27. Folder Structure
+
+Adapt to the existing repository. The target structure:
+
+```
+src/
+  app/
+    App.tsx                 — providers (QueryClient, Router, Toast)
+    router.tsx              — route definitions
+    providers.tsx           — context composition
+  components/
+    layout/
+      AppShell.tsx          — sidebar + topbar + outlet
+      Sidebar.tsx
+      Topbar.tsx
+      MobileNavigation.tsx
+    ui/
+      Button.tsx, Input.tsx, Select.tsx, Badge.tsx,
+      Modal.tsx, Drawer.tsx, Dropdown.tsx, Toast.tsx,
+      EmptyState.tsx, Skeleton.tsx, Tabs.tsx, Tooltip.tsx
+    dashboard/
+      DiscoveryPanel.tsx
+      KpiCard.tsx
+      OpportunityTable.tsx
+      ActiveMonitors.tsx
+      MarketChart.tsx
+      ActivityFeed.tsx
+    discovery/
+      SearchBar.tsx
+      FilterPanel.tsx
+      ResultCard.tsx
+      ResultsTable.tsx
+      ResultDetails.tsx
+    monitors/
+      MonitorForm.tsx       — multi-step modal
+      MonitorCard.tsx
+      MonitorList.tsx
+    opportunities/
+      OpportunityDetails.tsx
+      DealAnalysis.tsx
+    notifications/
+      NotificationItem.tsx
+      NotificationDropdown.tsx
+  pages/
+    OverviewPage.tsx
+    DiscoverPage.tsx
+    OpportunitiesPage.tsx
+    MonitorsPage.tsx
+    CollectionsPage.tsx
+    ComparisonsPage.tsx
+    MarketInsightsPage.tsx
+    PriceHistoryPage.tsx
+    VideoReviewsPage.tsx
+    NotificationsPage.tsx
+    ActivityPage.tsx
+    IntegrationsPage.tsx
+    SettingsPage.tsx
+  data/
+    demoData.ts             — seed records with isSample: true
+    categories.ts           — category definitions and filter schemas
+  hooks/
+    useLocalStorage.ts
+    useDebounce.ts
+    useFilters.ts
+    useSimulatedLatency.ts
+  services/
+    searchService.ts
+    opportunityService.ts
+    monitorService.ts
+    collectionService.ts
+    notificationService.ts
+    activityService.ts
+    analyticsService.ts
+  stores/
+    uiStore.ts              — Zustand: sidebar, view mode
+    filterStore.ts          — Zustand: active filters (optional)
+  types/
+    opportunity.ts
+    monitor.ts
+    collection.ts
+    notification.ts
+    activity.ts
+    common.ts
+  utils/
+    currency.ts             — formatCurrency, formatCompact
+    date.ts                 — relativeTime, formatDate
+    score.ts                — dealScoreColor, scoreLabel
+    id.ts                   — generateId
+  styles/
+    globals.css             — CSS custom properties, Tailwind directives
+    tokens.css              — design tokens
+```
+
+## 28. Implementation Sequence
+
+Follow this order strictly. Each step produces a working increment.
+
+**Phase 1 — Foundation (Days 1–2):** Inspect the existing repo; establish Vite + TypeScript + Tailwind + Router + QueryClient + Zustand; create the design token file and global CSS; build `AppShell`, `Sidebar`, `Topbar`, and the route skeleton with placeholder page titles. Verify navigation works at all breakpoints.
+
+**Phase 2 — Design System Components (Days 3–4):** Build `Button`, `Input`, `Select`, `Badge`, `Modal`, `Drawer`, `Dropdown`, `Toast`, `EmptyState`, `Skeleton`, `Tabs`, `Tooltip`. Every component has defined states, keyboard behavior, and aria attributes. Create a hidden `/design-system` route (dev-only) that renders every component in every state for visual verification.
+
+**Phase 3 — Data Layer (Day 5):** Write `demoData.ts` with 40–60 realistic opportunities across all categories (including the five example rows and at least 8 real-estate records with full `realEstate` sub-objects), 6 monitors, 15 notifications, 20 activity events, 4 collections, and 8 video reviews. Write the service modules with simulated latency and LocalStorage persistence. Write the hooks (`useDebounce`, `useLocalStorage`, `useSimulatedLatency`).
+
+**Phase 4 — Overview Dashboard (Days 6–8):** This is the highest-priority page. Build the header, Discovery Panel, KPI cards with sparklines, Fresh Opportunities table with search/filter/sort/pagination, Active Monitors widget, Market Intelligence charts with functional date filters, and Recent Activity feed. Verify every interaction.
+
+**Phase 5 — Discover & Result Details (Days 9–11):** Build the search bar, adaptive filter panel, grid/table toggle, result cards and table, and the detail drawer with gallery, price history chart, deal analysis, collections, and monitor pre-fill. Verify that search actually filters `demoData` and that empty states appear correctly.
+
+**Phase 6 — Monitors (Days 12–13):** Build the monitor list and the four-step creation/edit modal with validation, step persistence, and review. Implement pause/resume/delete with undo. Implement the simulated match event and its notification.
+
+**Phase 7 — Opportunities, Collections, Comparisons (Days 14–16):** Build the tabbed opportunities page with bulk actions and the deal evaluation drawer. Build collections CRUD and item add/remove. Build comparison selection and the comparison table.
+
+**Phase 8 — Notifications, Activity, Analytics Pages (Days 17–18):** Build the notifications page and dropdown with read/unread persistence. Build the activity log. Build Market Insights with functional range filters, Price History with item selection and chart, and Video Reviews with filters.
+
+**Phase 9 — Integrations & Settings (Day 19):** Build integrations cards with not-connected badges and request modal. Build settings tabs with persisted forms and data export/reset.
+
+**Phase 10 — Polish & Verification (Days 20–21):** Run `tsc --noEmit` and fix all type errors. Run `npm run build` and fix all build errors. Check for React console warnings (keys, controlled inputs, effect dependencies). Verify all breakpoints. Run through every interaction on the checklist in Section 24. Verify LocalStorage persistence across reload. Verify no dead links, no inert buttons, no broken images. Confirm the simulation labels are present on all sample data.
+
+## 29. Acceptance Criteria
+
+The build is complete when:
+
+1. `npm run dev` starts without errors and `npm run build` succeeds with zero TypeScript errors.
+2. All 13 routes render with useful content — no empty placeholder pages.
+3. Every element in Section 24 has been manually exercised and works.
+4. LocalStorage state survives a page reload for monitors, collections, notifications, opportunity statuses, settings, and UI preferences.
+5. The Overview dashboard, Discover page, and Opportunities table meet the visual quality bar of the design system — verified against the token values, typography scale, spacing scale, and component states.
+6. No page overflows horizontally at 375px, 768px, or 1440px.
+7. Every demo record displays the sample-data label where confusion is possible; no UI text claims live crawling, verified savings, or guaranteed returns.
+8. The console is free of React warnings and uncaught errors during a full navigation and interaction pass.
+
+---
+
+# Part IX — Production Path (Beyond the Prototype)
+
+The prototype is designed so that the following production work requires no page-level rewrites — only service-layer implementation swaps.
+
+**Backend:** Node.js (TypeScript) API or Python FastAPI. PostgreSQL for relational data. A vector database (pgvector → Qdrant as scale demands) for semantic search. A job queue (BullMQ or Celery) with a scheduler for monitor crawl frequency. WebSocket or Server-Sent Events for real-time notification push.
+
+**Crawling:** the three-tier strategy in Section 6 — Firecrawl for general discovery, Apify Actors for marketplace-specific extraction, Playwright + Crawlee for anti-bot-heavy sources. Results normalized into the `Opportunity` schema, embedded, and upserted.
+
+**AI layer:** embedding model for semantic search (Cohere Embed, Voyage, or OpenAI `text-embedding-3`), a reranking model for precision (Cohere Rerank or a cross-encoder), and an LLM for schema-constrained entity extraction with gleaning. The match scoring service combines attribute match, price deviation, and freshness into the `dealScore`.
+
+**Authentication:** replace the mock session with a real auth provider (Clerk, Auth0, or Supabase Auth). The prototype's user avatar and settings pages already have the correct shape for a real user object.
+
+**Billing:** Stripe for subscriptions. The plan indicator and usage meter in the sidebar already read from a `plan` object — swap the mock for the Stripe customer portal.
+
+**The service contract does not change.** `searchService.search()` returns a `Promise<SearchResult>` in the prototype (from `demoData`) and in production (from the API). The UI layer is identical.
+
+---
+
+# Run Command
+
+```bash
+npm install && npm run dev
+```
+
+(or the package manager and script names already used by the existing repository — inspect `package.json` first).
+
+---
+
+**End of specification.** This document contains every architectural decision, design token, page behavior, interaction requirement, and implementation step needed to build ORBIT Intelligence. Follow the phases in order; verify each phase against its acceptance criteria before proceeding.

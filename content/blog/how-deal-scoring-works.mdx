@@ -1,0 +1,35 @@
+---
+title: "How deal scoring works"
+description: "The anatomy of an ORBIT deal score: reference bands, observed price movement, and match quality — explained with the seams showing."
+category: "Research"
+date: "2026-10-24"
+---
+
+Every opportunity in ORBIT carries a deal score from 0 to 100. It is one number, but it is not a black box. Here is
+exactly how it is composed — and where its limits are.
+
+## The three inputs
+
+**1. Gap to reference.** The core input. For each tracked item we maintain an estimated reference value computed
+from comparable observations: recent listings in the same reference band, sold results where available, public price
+indices for property. A listing 7% below its reference scores meaningfully better than one 2% below. A listing above
+reference earns nothing here.
+
+**2. Observed price movement.** A listing that was €4,150 yesterday and €3,850 today is a stronger signal than one
+that listed at €3,850 flat — a reduction is a motivated seller. Recent drops add to the score; increases subtract.
+
+**3. Match quality.** How well the listing fits your monitor criteria: part numbers, condition, box and papers,
+neighborhood, bedrooms. A 95%-fit listing you'd actually buy scores higher than a loose match you'd scroll past.
+
+## What the score is not
+
+It is **not an appraisal**. Reference values are estimates from tracked observations — good ones, but estimates. It
+is **not a guarantee**. A high score means "priced well below the estimated band with strong signals", not "this
+will return 8%". And it is **not a substitute for verification**: the source link is one click away, and it should
+be your second click.
+
+## Transparency by construction
+
+Every score is inspectable: the record shows the reference value, the price history that produced the movement, and
+the evidence links behind the estimate. If the inputs are thin — one observation, no comparables — the confidence
+badge says so. A number you can't interrogate is a number you can't trust.
