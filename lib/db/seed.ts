@@ -7,6 +7,7 @@
    ========================================================================== */
 
 import type { Db } from './index';
+import { hashPassword } from '../auth/password';
 import type {
   ActivityKind,
   Category,
@@ -637,6 +638,7 @@ function insertPlans(db: Db): void {
 
 export function seedGlobals(db: Db): void {
   insertPlans(db);
+  seedDemoAccount(db);
 
   const oppStmt = db.prepare(
     `INSERT INTO opportunities (id, user_id, title, description, category, image_url, source_marketplace, source_url,
@@ -724,7 +726,21 @@ export function seedGlobals(db: Db): void {
   tx();
 }
 
+/** Fixed demo account on every instance (serverless-friendly login). */
+function seedDemoAccount(db: Db): void {
+  const demo = { id: 'usr-demo-fixed', email: 'demo@orbit.test', password: 'orbit-demo-2026', name: 'Demo Operator' };
+  db.prepare("INSERT OR IGNORE INTO users (id, email, password_hash, email_confirmed_at) VALUES (?, ?, ?, datetime('now'))")
+    .run(demo.id, demo.email, hashPassword(demo.password));
+  db.prepare('INSERT OR IGNORE INTO profiles (id, email, full_name) VALUES (?, ?, ?)').run(demo.id, demo.email, demo.name);
+  const hasContent = (db.prepare('SELECT 1 AS x FROM monitors WHERE user_id = ? LIMIT 1').get(demo.id) as { x: number } | undefined);
+  if (!hasContent) seedUserContentInner(db, demo.id, 'pro');
+}
+
 export function seedUserContent(db: Db, userId: string, planCode: 'free' | 'pro' = 'pro'): void {
+  seedUserContentInner(db, userId, planCode);
+}
+
+function seedUserContentInner(db: Db, userId: string, planCode: 'free' | 'pro'): void {
   const insertMonitor = db.prepare(
     `INSERT INTO monitors (id, user_id, name, description, category, criteria, sensitivity, frequency_minutes,
       notify_in_app, notify_email, digest_mode, price_drop_only, status, match_count, last_checked_at, created_at)

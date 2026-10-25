@@ -111,6 +111,33 @@ export function createUser(input: SignUpInput, planCode: 'free' | 'pro' = 'free'
 /** Import password hash comparison into data layer so actions stay thin. */
 export { verifyPassword } from '@/lib/auth/password';
 
+/** Fixed demo account — seeded identically on every serverless instance so the
+ *  deployed demo can always be logged into (see README: serverless limits). */
+export const DEMO_ACCOUNT = {
+  id: 'usr-demo-fixed',
+  email: 'demo@orbit.test',
+  password: 'orbit-demo-2026',
+  name: 'Demo Operator',
+} as const;
+
+/** Re-provision a signed-session user on an instance that has never seen them
+ *  (ephemeral /tmp database on serverless). Idempotent. */
+export function bootstrapUserFromSession(uid: string, email: string, name: string): UserRow | null {
+  const db = getDb();
+  const existing = findUserByEmail(email);
+  if (existing && existing.id !== uid) return null; // email belongs to another account
+  db.prepare(
+    "INSERT OR IGNORE INTO users (id, email, password_hash, email_confirmed_at) VALUES (?, ?, 'scrypt:bootstrap:unloginable', datetime('now'))"
+  ).run(uid, email.trim().toLowerCase());
+  db.prepare('INSERT OR IGNORE INTO profiles (id, email, full_name) VALUES (?, ?, ?)').run(
+    uid,
+    email.trim().toLowerCase(),
+    name || email.split('@')[0]
+  );
+  if (!getPlanForUser(uid)) seedForUser(db, uid, 'pro');
+  return findUserById(uid);
+}
+
 /* ---------------------------------- Contact ---------------------------------- */
 
 export function insertContactMessage(msg: Omit<ContactMessage, 'id' | 'created_at'>): ContactMessage {

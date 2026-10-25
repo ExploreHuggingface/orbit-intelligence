@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SESSION_COOKIE, SESSION_MAX_AGE, createSessionValue } from '@/lib/auth/session';
 import { verifyPassword } from '@/lib/auth/password';
-import { createUser, findUserByEmail } from '@/lib/data/misc';
+import { createUser, findUserByEmail, getProfile } from '@/lib/data/misc';
 import { logActivity } from '@/lib/data/activity';
 import { signInSchema, signUpSchema } from '@/lib/validations/auth';
 
@@ -46,7 +46,7 @@ export async function signUpAction(_prev: ActionState, formData: FormData): Prom
 
   const user = createUser({ email, password, full_name }, 'pro');
   const store = await cookies();
-  store.set(SESSION_COOKIE, await createSessionValue(user.id), {
+  store.set(SESSION_COOKIE, await createSessionValue(user.id, user.email, getProfile(user.id)?.full_name ?? ''), {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -78,7 +78,7 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   }
 
   const store = await cookies();
-  store.set(SESSION_COOKIE, await createSessionValue(user.id), {
+  store.set(SESSION_COOKIE, await createSessionValue(user.id, user.email, getProfile(user.id)?.full_name ?? ''), {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',

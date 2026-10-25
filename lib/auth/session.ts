@@ -9,6 +9,8 @@ export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export interface SessionPayload {
   uid: string;
+  email: string;
+  name: string;
   exp: number; // unix seconds
 }
 
@@ -43,9 +45,11 @@ async function hmac(message: string, secret: string): Promise<string> {
   return b64url(new Uint8Array(sig));
 }
 
-export async function createSessionValue(uid: string): Promise<string> {
+export async function createSessionValue(uid: string, email = '', name = ''): Promise<string> {
   const payload: SessionPayload = {
     uid,
+    email,
+    name,
     exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE,
   };
   const body = `v1.${b64url(JSON.stringify(payload))}`;

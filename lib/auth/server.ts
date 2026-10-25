@@ -2,7 +2,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SESSION_COOKIE, verifySessionValue } from './session';
-import { findUserById, getProfile } from '@/lib/data/misc';
+import { bootstrapUserFromSession, findUserById, getProfile } from '@/lib/data/misc';
 import type { Profile } from '@/lib/types';
 
 export interface SessionUser {
@@ -16,7 +16,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const raw = store.get(SESSION_COOKIE)?.value;
   const payload = await verifySessionValue(raw);
   if (!payload) return null;
-  const user = findUserById(payload.uid);
+  let user = findUserById(payload.uid);
+  // Serverless demo mode: the session is HMAC-signed, so a valid cookie is
+  // proof of authentication. If this instance's ephemeral database has never
+  // seen the user (cold instance after signup elsewhere), re-provision the
+  // account and its demo content here.
+  if (!user && payload.email) {
+    user = bootstrapUserFromSession(payload.uid, payload.email, payload.name);
+  }
   if (!user) return null;
   const profile = getProfile(user.id);
   if (!profile) return null;
